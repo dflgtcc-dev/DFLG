@@ -56,10 +56,10 @@
                 </p>
 
                 <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
-                    <a href="<?= URL_BASE ?>/login" class="dflg-home-cta-primary">
+                    <a href="<?= URL_BASE ?>/login?aba=cadastro" class="dflg-home-cta-primary">
                         Começar Agora <i class="bi bi-arrow-right"></i>
                     </a>
-                    <a href="<?= URL_BASE ?>/dashboard" class="dflg-home-cta-secondary">
+                    <a href="<?= URL_BASE ?>/logout?redirect=demo" class="dflg-home-cta-secondary">
                         Demonstração
                     </a>
                 </div>
@@ -198,7 +198,7 @@
                         </div>
                     </div>
 
-                    <a href="<?= URL_BASE ?>/login" class="dflg-home-cta-primary">
+                    <a href="<?= URL_BASE ?>/login?aba=cadastro" class="dflg-home-cta-primary">
                         Começar Agora Gratuitamente <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>

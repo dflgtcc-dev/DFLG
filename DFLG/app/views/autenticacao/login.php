@@ -27,8 +27,9 @@ $emailAntigoCadastro = $emailAntigoCadastro ?? '';
         <div class="dflg-auth-orb dflg-auth-orb-br"></div>
         <div class="dflg-auth-divider-line d-none d-lg-block"></div>
 
-        <a href="<?= URL_BASE ?>/dashboard" class="dflg-explore-btn">
-            Explorar sem login <i class="bi bi-arrow-right"></i>
+        <a href="<?= URL_BASE ?>/" class="dflg-explore-btn">
+            <i class="bi bi-house"></i>
+            Voltar para a página inicial
         </a>
 
         <!-- ===================== Coluna esquerda: branding ===================== -->

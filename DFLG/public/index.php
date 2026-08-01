@@ -13,12 +13,6 @@ $router->get('/', 'HomeController@index');
 // Dashboard (Visão Geral) — front-end com dados de exemplo por enquanto
 $router->get('/dashboard', 'DashboardController@index');
 
-// -----------------------------------------------------------------------
-// As rotas abaixo apontam para controllers que ainda não existem/estão
-// vazios no projeto. Foram comentadas para não quebrar a aplicação.
-// Descomente cada uma conforme o respectivo Controller for implementado.
-// -----------------------------------------------------------------------
-
 // Autenticação
 $router->get('/login', 'AutenticacaoController@login');
 $router->post('/logar', 'AutenticacaoController@logar');
@@ -32,14 +26,17 @@ $router->post('/transacoes', 'TransacaoController@criar');
 // Calculadoras
 $router->get('/calculadoras', 'SimuladorController@index');
 
-// Categorias — CategoriaController.php existe mas está vazio
-// $router->get('/categorias', 'CategoriaController@index');
+// Categorias
+$router->get('/categorias', 'CategoriaController@index');
+$router->post('/categorias', 'CategoriaController@atualizar');
 
-// Parcelas — ParcelaController.php existe mas está vazio
-// $router->get('/parcelamentos', 'ParcelaController@index');
+// Parcelamentos
+$router->get('/parcelamentos', 'ParcelaController@index');
+$router->post('/parcelamentos', 'ParcelaController@criar');
 
-// Usuário / Perfil — UsuarioController.php existe mas está vazio
-// $router->get('/perfil', 'UsuarioController@perfil');
+// Usuário / Perfil
+$router->get('/perfil', 'UsuarioController@perfil');
+$router->post('/perfil', 'UsuarioController@atualizar');
 
 $router->run();
 

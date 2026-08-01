@@ -25,8 +25,11 @@ class AutenticacaoController extends Controller
      */
     public function login()
     {
-        if (isset($_SESSION['usuario_logado'])) {
-            $this->redirect(URL_BASE . '/dashboard');
+       if (
+            isset($_SESSION['usuario_logado']) &&
+            !isset($_GET['aba'])
+        ){
+        $this->redirect(URL_BASE . '/dashboard');
         }
 
         $abaInicial = ($_GET['aba'] ?? 'login') === 'cadastro' ? 'cadastro' : 'login';
@@ -113,9 +116,15 @@ class AutenticacaoController extends Controller
     /**
      * Encerra a sessão (GET /logout).
      */
-    public function logout()
+   public function logout()
     {
         $this->autenticacaoService->logout();
+
+        if (isset($_GET['redirect']) && $_GET['redirect'] === 'demo') {
+            $this->redirect(URL_BASE . '/dashboard');
+            return;
+        }
+
         $this->redirect(URL_BASE . '/login');
     }
 }

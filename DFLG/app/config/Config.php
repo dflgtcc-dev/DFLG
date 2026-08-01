@@ -21,7 +21,7 @@ define('URL_BASE', 'http://localhost/Xampp%20Visual%20Studio/DFLG/public');
 
 //Configurações do Banco de dados
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'db_dflg');
+define('DB_NAME', 'dflg_investments');
 
 define('DB_USER', 'root');
 define('DB_PASS', '');

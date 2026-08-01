@@ -3,15 +3,17 @@
 namespace app\controllers;
 
 use app\core\Controller;
+use app\services\ParcelaService;
 
 class DashboardController extends Controller
 {
     /**
      * Tela "Visão Geral".
      *
-     * Por enquanto os dados são fixos (mock), só para montar o front-end.
-     * Quando a camada Model/Repository/Service da Transacao, Categoria e
-     * Parcela estiver pronta, essa lógica deve migrar para um
+     * A maioria dos dados ainda é fixa (mock), só para montar o front-end.
+     * Os parcelamentos já vêm de verdade do ParcelaService (ver abaixo).
+     * Quando a camada Model/Repository/Service de Transacao e Categoria
+     * também estiver 100% migrada, o restante deve seguir para um
      * DashboardService que busca os valores reais do usuário logado.
      */
     public function index()
@@ -20,7 +22,15 @@ class DashboardController extends Controller
 
         $totalReceitas = 8500.00;
         $despesasRealizadas = 5200.00;
-        $parcelamentosDoMes = 1350.00;
+
+        // Parcelamentos: agora vêm de verdade da tela /parcelamentos (ParcelaService),
+        // com o progresso calculado pela data — não é mais um valor fixo.
+        $usuarioId = isset($_SESSION['usuario_logado']) ? $_SESSION['usuario_logado']->getId() : null;
+        $parcelaService = new ParcelaService();
+        $parcelasAtivas = $parcelaService->listarComProgresso($usuarioId, true);
+        $resumoParcelas = $parcelaService->resumo($parcelasAtivas);
+
+        $parcelamentosDoMes = $resumoParcelas['totalMensal'];
         $totalDespesas = $despesasRealizadas + $parcelamentosDoMes;
         $saldo = $totalReceitas - $totalDespesas;
 
@@ -79,13 +89,16 @@ class DashboardController extends Controller
             ['nome' => 'Carro Novo',            'valorAtual' => 18000, 'valorAlvo' => 50000],
         ];
 
-        // Próximos parcelamentos
-        $proximasParcelas = [
-            ['descricao' => 'Notebook Dell', 'categoria' => 'Tecnologia', 'valor' => 450, 'vencimento' => '2026-05-15'],
-            ['descricao' => 'Sofá',          'categoria' => 'Casa',       'valor' => 200, 'vencimento' => '2026-05-20'],
-            ['descricao' => 'Curso Online',  'categoria' => 'Educação',   'valor' => 100, 'vencimento' => '2026-05-10'],
-        ];
-        $totalParcelasMes = array_sum(array_column($proximasParcelas, 'valor'));
+        // Próximos parcelamentos (os 3 mais próximos de vencer, entre os ativos)
+        $ordenadas = $parcelasAtivas;
+        usort($ordenadas, fn($a, $b) => strcmp($a['proximoVencimento'] ?? '9999', $b['proximoVencimento'] ?? '9999'));
+        $proximasParcelas = array_map(fn($p) => [
+            'descricao' => $p['descricao'],
+            'categoria' => $p['categoria'],
+            'valor' => (float) $p['valor_parcela'],
+            'vencimento' => $p['proximoVencimento'],
+        ], array_slice($ordenadas, 0, 3));
+        $totalParcelasMes = $parcelamentosDoMes;
 
         $this->view('dashboard/index', [
             'activePage' => 'overview',

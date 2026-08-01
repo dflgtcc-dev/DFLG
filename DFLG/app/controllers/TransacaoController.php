@@ -6,6 +6,7 @@ use app\core\Controller;
 use app\helpers\Validador;
 use app\models\Transacao;
 use app\services\TransacaoService;
+use app\services\UsuarioService;
 
 class TransacaoController extends Controller
 {
@@ -114,6 +115,12 @@ class TransacaoController extends Controller
         $transacao->setMoeda($moeda);
 
         $this->service->criar($transacao);
+
+        // Gamificação: +10 pontos por transação registrada (só para usuários logados)
+        if (isset($_SESSION['usuario_logado'])) {
+            $usuarioService = new UsuarioService();
+            $usuarioService->adicionarPontos($_SESSION['usuario_logado']->getId(), 10);
+        }
 
         $this->redirect(URL_BASE . '/transacoes');
     }

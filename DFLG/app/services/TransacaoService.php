@@ -41,6 +41,18 @@ class TransacaoService
         return $this->repository->delete($id);
     }
 
+    /** Últimas transações de um usuário (usado nas "Atividades Recentes" do perfil). */
+    public function recentesPorUsuario(int $usuarioId, int $limite = 5): array
+    {
+        return $this->repository->getRecentesPorUsuario($usuarioId, $limite);
+    }
+
+    /** Gastos (soma + contagem) por categoria — usado na tela de Categorias. */
+    public function gastosPorCategoria(?int $usuarioId): array
+    {
+        return $this->repository->getGastosPorCategoria($usuarioId);
+    }
+
     /** Converte o filtro de período ('week', 'month', '3months', '6months', 'all') em uma data mínima. */
     public function dataInicioPeriodo(string $periodo): ?string
     {

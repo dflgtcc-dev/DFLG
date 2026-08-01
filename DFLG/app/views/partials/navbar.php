@@ -16,7 +16,7 @@ function dflg_nav_class(string $page, string $active): string
     <div class="container-xxl px-4">
         <div class="d-flex align-items-center justify-content-between" style="height: 80px;">
 
-            <a href="<?= URL_BASE ?>/dashboard" class="navbar-brand-wrap">
+            <a href="<?= URL_BASE ?>/" class="navbar-brand-wrap">
                 <img src="<?= URL_BASE ?>/assets/img/dflg-logo.jpg" alt="DFLG" class="navbar-logo">
                 <div>
                     <span class="brand-title">DFLG</span>
@@ -30,7 +30,7 @@ function dflg_nav_class(string $page, string $active): string
                 <a href="<?= URL_BASE ?>/transacoes" class="<?= dflg_nav_class('transactions', $activePage) ?>">Transações</a>
                 <a href="<?= URL_BASE ?>/parcelamentos" class="<?= dflg_nav_class('installments', $activePage) ?>">Parcelamentos</a>
                 <a href="<?= URL_BASE ?>/categorias" class="<?= dflg_nav_class('categories', $activePage) ?>">Categorias</a>
-                <a href="<?= URL_BASE ?>/perfil" class="dflg-nav-profile ms-3" title="Perfil">
+                <a href="<?= URL_BASE ?>/perfil" class="dflg-nav-profile ms-3 <?= $activePage === 'profile' ? 'is-active' : '' ?>" title="Perfil">
                     <i class="bi bi-person-fill"></i>
                 </a>
             </div>

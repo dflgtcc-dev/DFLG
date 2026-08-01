@@ -99,4 +99,49 @@ class TransacaoRepository
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         return $stmt->execute();
     }
+
+    /** Últimas transações registradas por um usuário — usado nas "Atividades Recentes" do perfil. */
+    public function getRecentesPorUsuario(int $usuarioId, int $limite = 5): array
+    {
+        $stmt = $this->connection->prepare(
+            "SELECT * FROM transacoes WHERE usuario_id = :usuario_id ORDER BY criado_em DESC, id DESC LIMIT :limite"
+        );
+        $stmt->bindValue(':usuario_id', $usuarioId, PDO::PARAM_INT);
+        $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Soma (e conta) as despesas já registradas, agrupadas por categoria —
+     * é o que alimenta a tela de Categorias com o "gasto" de cada uma.
+     * Formato: ['NomeCategoria' => ['total' => float, 'qtd' => int]]
+     */
+    public function getGastosPorCategoria(?int $usuarioId): array
+    {
+        if ($usuarioId !== null) {
+            $sql = "SELECT categoria, SUM(valor) AS total, COUNT(*) AS qtd
+                    FROM transacoes
+                    WHERE tipo = 'despesa' AND (usuario_id = :usuario_id OR usuario_id IS NULL)
+                    GROUP BY categoria";
+            $stmt = $this->connection->prepare($sql);
+            $stmt->bindValue(':usuario_id', $usuarioId, PDO::PARAM_INT);
+        } else {
+            $sql = "SELECT categoria, SUM(valor) AS total, COUNT(*) AS qtd
+                    FROM transacoes
+                    WHERE tipo = 'despesa' AND usuario_id IS NULL
+                    GROUP BY categoria";
+            $stmt = $this->connection->prepare($sql);
+        }
+
+        $stmt->execute();
+
+        $gastos = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $linha) {
+            $gastos[$linha['categoria']] = ['total' => (float) $linha['total'], 'qtd' => (int) $linha['qtd']];
+        }
+
+        return $gastos;
+    }
 }
