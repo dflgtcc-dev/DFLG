@@ -34,13 +34,21 @@ if (!function_exists('dflg_data_br')) {
 
     <?php require __DIR__ . '/../partials/navbar.php'; ?>
 
-    <main class="container-xxl px-4 py-5" style="padding-bottom: 7rem !important;">
+    <main class="container-xxl px-4 py-5">
 
-        <div class="dflg-page-title">
-            <span class="bar"></span>
-            <h1>Parcelamentos</h1>
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-1">
+            <div>
+                <div class="dflg-page-title">
+                    <span class="bar"></span>
+                    <h1>Parcelamentos</h1>
+                </div>
+                <p class="dflg-page-subtitle mb-0">Acompanhe e gerencie suas compras parceladas</p>
+            </div>
+            <button type="button" class="dflg-btn-solid-green px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalNovoParcelamento">
+                <i class="bi bi-plus-lg"></i> Novo Parcelamento
+            </button>
         </div>
-        <p class="dflg-page-subtitle mb-4">Acompanhe e gerencie suas compras parceladas</p>
+        <div class="mb-4"></div>
 
         <!-- ===================== Cards de resumo ===================== -->
         <div class="row g-3 mb-4">
@@ -90,7 +98,7 @@ if (!function_exists('dflg_data_br')) {
         <?php if (empty($parcelas)): ?>
             <div class="dflg-panel text-center py-5 text-dflg-muted">
                 <i class="bi bi-credit-card d-block mb-3" style="font-size: 2.5rem; opacity: .3;"></i>
-                <p class="mb-0">Nenhum parcelamento ativo. Clique no botão verde no canto da tela para adicionar o primeiro.</p>
+                <p class="mb-0">Nenhum parcelamento ativo. Clique em "Novo Parcelamento" no topo da página para adicionar o primeiro.</p>
             </div>
         <?php else: ?>
             <div class="row g-3">
@@ -149,11 +157,6 @@ if (!function_exists('dflg_data_br')) {
             </div>
         <?php endif; ?>
     </main>
-
-    <!-- ===================== Botão flutuante ===================== -->
-    <button type="button" class="dflg-fab" data-bs-toggle="modal" data-bs-target="#modalNovoParcelamento" title="Novo parcelamento">
-        <i class="bi bi-plus-lg"></i>
-    </button>
 
     <!-- ===================== Modal Novo Parcelamento ===================== -->
     <div class="modal fade" id="modalNovoParcelamento" tabindex="-1" aria-hidden="true">

@@ -27,10 +27,14 @@ class Controller
         exit();
     }
 
+    /**
+     * RN11: se não estiver autenticado, o usuário deve ser redirecionado
+     * à Home (não a uma tela interna) — só acessa o resto do sistema após o login.
+     */
     public function autenticacaoRequired()
     {
         if (!isset($_SESSION['usuario_logado'])) {
-            $this->redirect(URL_BASE . '/login');
+            $this->redirect(URL_BASE . '/');
         }
 
         return true;

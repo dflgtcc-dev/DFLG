@@ -81,6 +81,19 @@ function dflg_data_label(string $data, string $hoje, string $ontem): string
 
     <main class="container-xxl px-4 py-5">
 
+        <?php if ($modoDemo): ?>
+            <div class="dflg-demo-banner mb-4">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-eye"></i>
+                    <div>
+                        <p class="mb-0 text-white fw-medium">Modo demonstração</p>
+                        <p class="mb-0 text-dflg-muted small">Os números aqui são fictícios. Crie sua conta pra começar a controlar suas finanças de verdade.</p>
+                    </div>
+                </div>
+                <a href="<?= URL_BASE ?>/login?aba=cadastro" class="dflg-btn-solid-green">Criar minha conta</a>
+            </div>
+        <?php endif; ?>
+
         <div class="mb-5">
             <div class="dflg-page-title">
                 <span class="bar"></span>
@@ -123,13 +136,7 @@ function dflg_data_label(string $data, string $hoje, string $ontem): string
                     </div>
                     <p class="dflg-eyebrow mb-2">Saldo</p>
                     <p class="dflg-metric <?= $saldo >= 0 ? 'is-green' : 'is-red' ?>"><?= dflg_money($saldo) ?></p>
-                    <?php if ($saldo > 0): ?>
-                        <button type="button" class="dflg-chip-btn border-0">
-                            Mover para Meta <i class="bi bi-arrow-right"></i>
-                        </button>
-                    <?php else: ?>
-                        <p class="text-dflg-muted small mb-0">Deficitário este mês</p>
-                    <?php endif; ?>
+                    <p class="text-dflg-muted small mb-0"><?= $saldo >= 0 ? 'Superávit este mês' : 'Deficitário este mês' ?></p>
                 </div>
             </div>
 
@@ -173,10 +180,7 @@ function dflg_data_label(string $data, string $hoje, string $ontem): string
         <div class="row g-4 mb-4">
             <div class="col-12 col-lg-6">
                 <div class="dflg-panel">
-                    <div class="d-flex justify-content-between align-items-start mb-1">
-                        <p class="dflg-eyebrow mb-0">Mapa de Calor</p>
-                        <a href="<?= URL_BASE ?>/transacoes" class="dflg-chip-btn border-0">ver mais <i class="bi bi-arrow-up-right"></i></a>
-                    </div>
+                    <p class="dflg-eyebrow mb-0">Mapa de Calor</p>
                     <p class="dflg-metric mt-1"><?= dflg_money($gastoTotalAteHoje) ?></p>
                     <p class="text-dflg-muted small mb-4">Média diária: <span class="text-light"><?= dflg_money($mediaDiaria) ?></span></p>
 
@@ -206,15 +210,20 @@ function dflg_data_label(string $data, string $hoje, string $ontem): string
                                             if ($valor > 0) $classes .= ' has-value';
                                         }
                                         if ($isToday) $classes .= ' is-today';
+                                        $dataCompleta = sprintf('%04d-%02d-%02d', $heatMapAno, $heatMapMes, $dia);
+                                        $tooltipTexto = $valor > 0 ? 'Dia ' . $dia . ': ' . dflg_money($valor) : 'Dia ' . $dia;
                                         ?>
-                                        <div class="<?= $classes ?>" title="<?= $valor > 0 ? 'Dia ' . $dia . ': ' . dflg_money($valor) : 'Dia ' . $dia ?>">
-                                            <?= $dia ?>
-                                        </div>
+                                        <?php if ($isFuture): ?>
+                                            <div class="<?= $classes ?>" data-tooltip="<?= $tooltipTexto ?>"><?= $dia ?></div>
+                                        <?php else: ?>
+                                            <a href="<?= URL_BASE ?>/transacoes?dataInicio=<?= $dataCompleta ?>&dataFim=<?= $dataCompleta ?>" class="<?= $classes ?>" data-tooltip="<?= $tooltipTexto ?>"><?= $dia ?></a>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 <?php endforeach; ?>
                             </div>
                         <?php endforeach; ?>
                     </div>
+                    <div id="dflgHeatTooltip" class="dflg-heat-tooltip"></div>
 
                     <div class="d-flex align-items-center justify-content-between mt-3">
                         <span class="text-dflg-muted" style="font-size:11px;">Menos</span>
@@ -243,11 +252,14 @@ function dflg_data_label(string $data, string $hoje, string $ontem): string
                 <div class="dflg-panel">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <p class="dflg-eyebrow mb-0">Transações Recentes</p>
-                        <a href="<?= URL_BASE ?>/transacoes" class="dflg-chip-btn border-0">ver todas <i class="bi bi-arrow-up-right"></i></a>
+                        <a href="<?= URL_BASE ?>/transacoes" class="dflg-chip-btn border-0">
+                            ver todas <i class="bi bi-arrow-right"></i>
+                        </a>
                     </div>
 
-                    <?php foreach ($gruposTransacoes as $data => $itens): ?>
-                        <p class="dflg-tx-group-label"><?= dflg_data_label($data, $hojeISO, $ontemISO) ?></p>
+                    <div class="dflg-transacoes-scroll">
+                        <?php foreach ($gruposTransacoes as $data => $itens): ?>
+                            <p class="dflg-tx-group-label"><?= dflg_data_label($data, $hojeISO, $ontemISO) ?></p>
                         <?php foreach ($itens as $t): ?>
                             <div class="dflg-tx-item">
                                 <span class="dflg-tx-icon <?= $t['tipo'] === 'despesa' ? 'is-expense' : '' ?>">
@@ -272,30 +284,46 @@ function dflg_data_label(string $data, string $hoje, string $ontem): string
                     <div class="d-flex justify-content-between align-items-start mb-4">
                         <div>
                             <h2>Minhas Metas</h2>
-                            <p class="dflg-panel-sub mb-0">Acompanhe seu progresso</p>
+                            <p class="dflg-panel-sub mb-0">Até 3 fixadas / mais próximas de bater 100%</p>
                         </div>
-                        <button type="button" class="dflg-chip-btn border-0" style="width:42px; height:42px; justify-content:center;">
-                            <i class="bi bi-plus-lg"></i>
-                        </button>
+                        <div class="d-flex align-items-center gap-2">
+                            <button
+                                type="button"
+                                class="dflg-chip-btn border-0"
+                                onclick="window.location.href='<?= URL_BASE ?>/metas'">
+                                ver todas <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
                     </div>
 
-                    <?php foreach ($metas as $meta):
-                        $progresso = min(100, round(($meta['valorAtual'] / $meta['valorAlvo']) * 100));
-                        ?>
-                        <div class="dflg-goal">
-                            <div class="dflg-goal-top">
-                                <span class="name"><?= htmlspecialchars($meta['nome']) ?></span>
-                                <span class="pct"><?= $progresso ?>%</span>
-                            </div>
-                            <div class="dflg-progress">
-                                <div class="dflg-progress-bar" style="width: <?= $progresso ?>%;"></div>
-                            </div>
-                            <div class="dflg-goal-bottom">
-                                <span class="current"><?= dflg_money($meta['valorAtual']) ?></span>
-                                <span class="target">de <?= dflg_money($meta['valorAlvo']) ?></span>
-                            </div>
+                    <?php if (empty($metas)): ?>
+                        <div class="text-center py-4 text-dflg-muted">
+                            <i class="bi bi-bullseye d-block mb-3" style="font-size: 2rem; opacity: .3;"></i>
+                            <p class="mb-2">Você ainda não tem metas ativas.</p>
+                            <a href="<?= URL_BASE ?>/metas" class="dflg-btn-outline-green dflg-btn-sm">Criar minha primeira meta</a>
                         </div>
-                    <?php endforeach; ?>
+                    <?php else: ?>
+                        <?php foreach ($metas as $meta): ?>
+                            <div class="dflg-goal">
+                                <div class="dflg-goal-top">
+                                    <span class="name">
+                                        <?= htmlspecialchars($meta['nome_meta']) ?>
+                                        <?php if ($meta['fixada']): ?>
+                                            <i class="bi bi-pin-angle-fill text-success ms-1" title="Fixada" style="font-size: 0.78rem;"></i>
+                                        <?php endif; ?>
+                                    </span>
+                                    <span class="pct"><?= $meta['percentual'] ?>%</span>
+                                </div>
+                                <div class="dflg-progress">
+                                    <div class="dflg-progress-bar" style="width: <?= $meta['percentual'] ?>%;"></div>
+                                </div>
+                                <div class="dflg-goal-bottom">
+                                    <span class="current"><?= dflg_money((float) $meta['valor_atual']) ?></span>
+                                    <span class="target">de <?= dflg_money((float) $meta['valor_meta']) ?></span>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -334,20 +362,85 @@ function dflg_data_label(string $data, string $hoje, string $ontem): string
                             <span class="fw-bold" style="color: var(--dflg-orange-500);"><?= dflg_money($p['valor']) ?></span>
                         </div>
                     <?php endforeach; ?>
-
-                    <a href="<?= URL_BASE ?>/parcelamentos" class="dflg-btn-outline-green d-block text-center mt-3">
-                        Gerenciar Parcelamentos
-                    </a>
                 </div>
             </div>
         </div>
 
     </main>
 
+    <!-- ===================== Modal Mover para Meta ===================== -->
+    <?php if (!empty($todasMetasAtivas)): ?>
+        <div class="modal fade" id="modalMoverParaMeta" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content dflg-modal">
+                    <form method="post" id="formMoverParaMeta" onsubmit="return dflgPrepararMoverMeta(event)">
+                        <input type="hidden" name="origem" value="dashboard">
+                        <div class="modal-header border-0 pb-0">
+                            <div>
+                                <h2 class="modal-title">Mover saldo para uma meta</h2>
+                                <p class="text-dflg-muted small mb-0 mt-1">Seu saldo positivo deste mês: <span class="text-success fw-semibold"><?= dflg_money($saldo) ?></span></p>
+                            </div>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="dflg-auth-label">Meta de destino</label>
+                                <select name="metaId" id="moverMetaSelect" class="dflg-input" style="padding-left:1rem;" required>
+                                    <?php foreach ($todasMetasAtivas as $opcao): ?>
+                                        <option value="<?= $opcao['id'] ?>"><?= htmlspecialchars($opcao['nome_meta']) ?> (<?= $opcao['percentual'] ?>%)</option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="mb-1">
+                                <label class="dflg-auth-label">Valor a mover</label>
+                                <div class="dflg-input-group">
+                                    <i class="bi bi-cash-coin dflg-input-icon"></i>
+                                    <input type="number" step="0.01" min="0.01" name="valorAporte" class="dflg-input" value="<?= number_format($saldo, 2, '.', '') ?>" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="dflg-btn-cancel flex-fill" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="dflg-auth-submit flex-fill">Confirmar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <script>
+            function dflgPrepararMoverMeta(event) {
+                var id = document.getElementById('moverMetaSelect').value;
+                if (!id) return false;
+                document.getElementById('formMoverParaMeta').action = '<?= URL_BASE ?>/metas/' + id + '/aportar';
+                return true;
+            }
+        </script>
+    <?php endif; ?>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script>
         const moneyFmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+        // ---- Mapa de Calor: tooltip customizado (mesma linguagem visual dos gráficos) ----
+        (function () {
+            const tooltip = document.getElementById('dflgHeatTooltip');
+            if (!tooltip) return;
+
+            document.querySelectorAll('.dflg-heat-cell[data-tooltip]').forEach((cell) => {
+                cell.addEventListener('mouseenter', () => {
+                    tooltip.textContent = cell.dataset.tooltip;
+                    tooltip.classList.add('is-visible');
+                });
+                cell.addEventListener('mousemove', (e) => {
+                    tooltip.style.left = e.clientX + 'px';
+                    tooltip.style.top = (e.clientY - 34) + 'px';
+                });
+                cell.addEventListener('mouseleave', () => {
+                    tooltip.classList.remove('is-visible');
+                });
+            });
+        })();
 
         // ---- Receitas vs Despesas ----
         new Chart(document.getElementById('chartReceitasDespesas'), {

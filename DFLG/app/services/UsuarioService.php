@@ -41,6 +41,18 @@ class UsuarioService
         return $this->repository->getUsuarioById($id);
     }
 
+    /** Usado na validação de unicidade do e-mail no cadastro (RN02). */
+    public function getUsuarioByEmail(string $email)
+    {
+        return $this->repository->getUsuarioByEmail($email);
+    }
+
+    /** Usado na validação de unicidade do nickname no cadastro (RN02). */
+    public function getUsuarioByNickname(string $nickname)
+    {
+        return $this->repository->getUsuarioByNickname($nickname);
+    }
+
     public function getUsuarioCompletoById(int $id): ?Usuario
     {
         return $this->repository->getUsuarioCompletoById($id);
@@ -51,14 +63,32 @@ class UsuarioService
         return $this->repository->updateUsuario($usuario);
     }
 
-    public function atualizarDadosPessoais(int $id, string $nome, ?string $telefone, ?string $localizacao): bool
+    public function atualizarDadosPessoais(
+        int $id,
+        string $nome,
+        ?string $sobrenome,
+        ?string $nickname,
+        ?string $telefone,
+        ?string $localizacao,
+        ?string $dataNascimento
+    ): bool {
+        return $this->repository->atualizarDadosPessoais($id, $nome, $sobrenome, $nickname, $telefone, $localizacao, $dataNascimento);
+    }
+
+    public function atualizarFoto(int $id, string $nomeArquivo): bool
     {
-        return $this->repository->atualizarDadosPessoais($id, $nome, $telefone, $localizacao);
+        return $this->repository->atualizarFoto($id, $nomeArquivo);
     }
 
     public function adicionarPontos(int $id, int $pontos): bool
     {
         return $this->repository->adicionarPontos($id, $pontos);
+    }
+
+    /** RN07: só soma XP se ainda não foi ganho hoje. */
+    public function adicionarPontosSeElegivel(int $id, int $pontos): bool
+    {
+        return $this->repository->adicionarPontosSeElegivel($id, $pontos);
     }
 
     public function registrarAcesso(int $id): array

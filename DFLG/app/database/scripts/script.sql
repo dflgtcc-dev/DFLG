@@ -14,15 +14,21 @@
 CREATE TABLE IF NOT EXISTS usuarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome_usuario VARCHAR(150) NOT NULL,
+    sobrenome VARCHAR(150) NULL,
+    nickname VARCHAR(50) NULL UNIQUE,
     email VARCHAR(150) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
     perfil VARCHAR(20) NOT NULL DEFAULT 'usuario',
     telefone VARCHAR(30) NULL,
     localizacao VARCHAR(120) NULL,
+    foto VARCHAR(255) NULL,
+    cpf_cnpj VARCHAR(20) NULL,
+    data_nascimento DATE NULL,
     pontos_totais INT NOT NULL DEFAULT 0,
     sequencia_atual INT NOT NULL DEFAULT 0,
     maior_sequencia INT NOT NULL DEFAULT 0,
     ultimo_acesso DATE NULL,
+    data_ultimo_xp DATE NULL,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -39,6 +45,12 @@ CREATE TABLE IF NOT EXISTS usuarios (
 -- ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS sequencia_atual INT NOT NULL DEFAULT 0;
 -- ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS maior_sequencia INT NOT NULL DEFAULT 0;
 -- ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultimo_acesso DATE NULL;
+-- ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS data_ultimo_xp DATE NULL;
+-- ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS nickname VARCHAR(50) NULL UNIQUE;
+-- ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS sobrenome VARCHAR(150) NULL;
+-- ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cpf_cnpj VARCHAR(20) NULL;
+-- ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS data_nascimento DATE NULL;
+-- ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS foto VARCHAR(255) NULL;
 -- ---------------------------------------------------------------------
 
 -- Conta padrão para facilitar testes (login: admin@dflg.com / senha: admin123).
@@ -133,3 +145,46 @@ INSERT INTO categorias (nome, orcamento_mensal) VALUES
 ('Educação', 300.00),
 ('Tecnologia', 500.00),
 ('Outros', 200.00);
+
+-- Metas financeiras (RF08 / RF19 / RN08). O tipo reflete o que o usuário
+-- está fazendo com o dinheiro: economizar (juntar por juntar), comprar
+-- (um item específico) ou investir (aplicar em algo). RN08: a data_limite
+-- só pode ser validada como "no futuro" no momento do cadastro (aqui no
+-- INSERT usamos datas fixas só pra ilustração do front).
+CREATE TABLE IF NOT EXISTS metas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NULL,
+    nome_meta VARCHAR(150) NOT NULL,
+    tipo ENUM('economizar', 'comprar', 'investir') NOT NULL,
+    valor_meta DECIMAL(12, 2) NOT NULL,
+    valor_atual DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    data_limite DATE NOT NULL,
+    concluida TINYINT(1) NOT NULL DEFAULT 0,
+    fixada TINYINT(1) NOT NULL DEFAULT 0,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
+);
+
+INSERT INTO metas (nome_meta, tipo, valor_meta, valor_atual, data_limite, fixada) VALUES
+('Reserva de emergência', 'economizar', 15000.00, 6500.00, '2026-12-31', 1),
+('Notebook novo',         'comprar',     6000.00, 2100.00, '2026-10-15', 0),
+('Aporte Tesouro Direto', 'investir',    10000.00, 4200.00, '2026-11-30', 0);
+
+-- ---------------------------------------------------------------------
+-- MIGRAÇÃO: se o banco já existia antes desta atualização, rode manualmente:
+--
+-- CREATE TABLE IF NOT EXISTS metas (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     usuario_id INT NULL,
+--     nome_meta VARCHAR(150) NOT NULL,
+--     tipo ENUM('economizar', 'comprar', 'investir') NOT NULL,
+--     valor_meta DECIMAL(12, 2) NOT NULL,
+--     valor_atual DECIMAL(12, 2) NOT NULL DEFAULT 0,
+--     data_limite DATE NOT NULL,
+--     concluida TINYINT(1) NOT NULL DEFAULT 0,
+--     fixada TINYINT(1) NOT NULL DEFAULT 0,
+--     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
+-- );
+-- ALTER TABLE metas ADD COLUMN IF NOT EXISTS fixada TINYINT(1) NOT NULL DEFAULT 0;
+-- ---------------------------------------------------------------------

@@ -12,13 +12,7 @@ if (!function_exists('dflg_pct')) {
     }
 }
 
-// Agrupa as calculadoras por categoria, preservando a ordem de inserção.
-$porCategoria = [];
-foreach ($calculadoras as $id => $s) {
-    $porCategoria[$s['categoria']][$id] = $s;
-}
-
-$info = $textosApoio[$tipoAtivo];
+$c = $calculadoras[$slug];
 $in = $inputs;
 $r = $resultado;
 ?>
@@ -28,7 +22,7 @@ $r = $resultado;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadoras • DFLG Investiments</title>
+    <title><?= htmlspecialchars($c['nome']) ?> • Calculadoras • DFLG Investiments</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
@@ -41,55 +35,32 @@ $r = $resultado;
 
     <main class="container-xxl px-4 py-5">
 
-        <div class="dflg-page-title">
-            <span class="bar"></span>
-            <h1>Calculadoras</h1>
-        </div>
-        <p class="dflg-page-subtitle mb-5">Calculadoras financeiras diversificadas para te dar uma noção prática de investimentos, metas e financiamentos</p>
+        <!-- Breadcrumb -->
+        <nav class="dflg-sim-breadcrumb mb-4">
+            <a href="<?= URL_BASE ?>/calculadoras">Calculadoras</a>
+            <i class="bi bi-chevron-right"></i>
+            <span><?= htmlspecialchars($c['nome']) ?></span>
+        </nav>
 
         <div class="row g-4">
-            <!-- ===================== Sidebar ===================== -->
-            <div class="col-12 col-lg-3">
-                <div class="dflg-panel dflg-sim-sidebar">
-                    <div class="d-flex align-items-center gap-2 mb-4">
-                        <i class="bi bi-calculator text-success"></i>
-                        <h2 class="mb-0" style="font-size:1.1rem;">Calculadoras</h2>
-                    </div>
+            <div class="col-12 col-lg-8">
 
-                    <?php foreach ($porCategoria as $categoriaNome => $itens): ?>
-                        <p class="dflg-sim-category-label"><?= htmlspecialchars($categoriaNome) ?></p>
-                        <div class="d-flex flex-column gap-2 mb-4">
-                            <?php foreach ($itens as $id => $s): ?>
-                                <a href="<?= URL_BASE ?>/calculadoras?tipo=<?= urlencode($id) ?>" class="dflg-sim-link <?= $tipoAtivo === $id ? 'active' : '' ?>">
-                                    <i class="bi <?= $s['icone'] ?>"></i>
-                                    <span><?= htmlspecialchars($s['nome']) ?></span>
-                                </a>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endforeach; ?>
+                <!-- Cabeçalho + explicação -->
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="dflg-card-icon"><i class="bi <?= $c['icone'] ?>"></i></span>
+                    <h1 class="mb-0" style="font-size:1.7rem;"><?= htmlspecialchars($info['titulo']) ?></h1>
                 </div>
-            </div>
+                <p class="dflg-panel-sub mb-4"><?= htmlspecialchars($info['texto']) ?></p>
 
-            <!-- ===================== Conteúdo ===================== -->
-            <div class="col-12 col-lg-9">
+                <!-- Formulário + resultado -->
                 <div class="dflg-panel">
+                    <h2 class="mb-4" style="font-size:1.05rem;"><i class="bi bi-calculator text-success me-2"></i>Faça sua simulação</h2>
 
-                    <!-- Cabeçalho: pra que serve + como usar (igual em todas as calculadoras) -->
-                    <div class="d-flex align-items-center gap-3 mb-2">
-                        <span class="dflg-card-icon"><i class="bi <?= $calculadoras[$tipoAtivo]['icone'] ?>"></i></span>
-                        <h2 class="mb-0"><?= htmlspecialchars($info['titulo']) ?></h2>
-                    </div>
-                    <p class="dflg-panel-sub mb-3" style="margin-left: 4.25rem;"><?= htmlspecialchars($info['texto']) ?></p>
-                    <div class="dflg-sim-tip">
-                        💡 <strong>Como usar:</strong> <?= htmlspecialchars($info['dica']) ?>
-                    </div>
-
-                    <form method="get" action="<?= URL_BASE ?>/calculadoras" class="mb-4">
-                        <input type="hidden" name="tipo" value="<?= htmlspecialchars($tipoAtivo) ?>">
+                    <form method="get" action="<?= URL_BASE ?>/calculadoras/<?= urlencode($slug) ?>" class="mb-4">
 
                         <?php // ===================== FORMULÁRIOS POR CALCULADORA ===================== ?>
 
-                        <?php if ($tipoAtivo === 'tesouro'): ?>
+                        <?php if ($slug === 'tesouro-direto'): ?>
                             <div class="row g-4 mb-4">
                                 <div class="col-12 col-md-6">
                                     <label class="dflg-sim-label">Título</label>
@@ -117,7 +88,7 @@ $r = $resultado;
                                 </div>
                             </div>
 
-                        <?php elseif ($tipoAtivo === 'jurosCompostos'): ?>
+                        <?php elseif ($slug === 'juros-compostos'): ?>
                             <div class="row g-4 mb-4">
                                 <div class="col-12 col-md-4">
                                     <label class="dflg-sim-label">Valor Inicial</label>
@@ -133,7 +104,7 @@ $r = $resultado;
                                 </div>
                             </div>
 
-                        <?php elseif ($tipoAtivo === 'investimento'): ?>
+                        <?php elseif ($slug === 'investimentos'): ?>
                             <div class="row g-4 mb-4">
                                 <div class="col-12 col-md-6">
                                     <label class="dflg-sim-label">Valor Inicial</label>
@@ -153,7 +124,7 @@ $r = $resultado;
                                 </div>
                             </div>
 
-                        <?php elseif ($tipoAtivo === 'rendaFixa'): ?>
+                        <?php elseif ($slug === 'renda-fixa'): ?>
                             <div class="row g-4 mb-4">
                                 <div class="col-12 col-md-4">
                                     <label class="dflg-sim-label">Valor Investido</label>
@@ -169,7 +140,7 @@ $r = $resultado;
                                 </div>
                             </div>
 
-                        <?php elseif ($tipoAtivo === 'cdb'): ?>
+                        <?php elseif ($slug === 'cdb'): ?>
                             <div class="row g-4 mb-4">
                                 <div class="col-12 col-md-6">
                                     <label class="dflg-sim-label">Valor Investido</label>
@@ -189,7 +160,7 @@ $r = $resultado;
                                 </div>
                             </div>
 
-                        <?php elseif ($tipoAtivo === 'aposentadoria'): ?>
+                        <?php elseif ($slug === 'aposentadoria'): ?>
                             <div class="row g-4 mb-4">
                                 <div class="col-12 col-md-6">
                                     <label class="dflg-sim-label">Idade Atual</label>
@@ -209,7 +180,7 @@ $r = $resultado;
                                 </div>
                             </div>
 
-                        <?php elseif ($tipoAtivo === 'educacao'): ?>
+                        <?php elseif ($slug === 'educacao'): ?>
                             <div class="row g-4 mb-4">
                                 <div class="col-12 col-md-4">
                                     <label class="dflg-sim-label">Custo Estimado</label>
@@ -225,7 +196,7 @@ $r = $resultado;
                                 </div>
                             </div>
 
-                        <?php elseif ($tipoAtivo === 'emergencia'): ?>
+                        <?php elseif ($slug === 'reserva-emergencia'): ?>
                             <div class="row g-4 mb-4">
                                 <div class="col-12 col-md-4">
                                     <label class="dflg-sim-label">Despesas Mensais</label>
@@ -241,7 +212,7 @@ $r = $resultado;
                                 </div>
                             </div>
 
-                        <?php elseif ($tipoAtivo === 'viagem'): ?>
+                        <?php elseif ($slug === 'viagem'): ?>
                             <div class="row g-4 mb-4">
                                 <div class="col-12 col-md-4">
                                     <label class="dflg-sim-label">Custo Total da Viagem</label>
@@ -257,7 +228,7 @@ $r = $resultado;
                                 </div>
                             </div>
 
-                        <?php elseif ($tipoAtivo === 'financiamentoImovel'): ?>
+                        <?php elseif ($slug === 'financiamento-imovel'): ?>
                             <div class="row g-4 mb-4">
                                 <div class="col-12 col-md-6">
                                     <label class="dflg-sim-label">Valor do Imóvel</label>
@@ -277,7 +248,7 @@ $r = $resultado;
                                 </div>
                             </div>
 
-                        <?php elseif ($tipoAtivo === 'financiamentoVeiculo'): ?>
+                        <?php elseif ($slug === 'financiamento-veiculo'): ?>
                             <div class="row g-4 mb-4">
                                 <div class="col-12 col-md-6">
                                     <label class="dflg-sim-label">Valor do Veículo</label>
@@ -305,7 +276,7 @@ $r = $resultado;
 
                     <?php // ===================== RESULTADOS POR CALCULADORA ===================== ?>
 
-                    <?php if ($tipoAtivo === 'tesouro'): ?>
+                    <?php if ($slug === 'tesouro-direto'): ?>
                         <div class="dflg-sim-result">
                             <div class="dflg-sim-result-row"><span>Total Investido</span><span class="text-white fw-medium"><?= dflg_money($r['totalInvestido']) ?></span></div>
                             <div class="dflg-sim-result-row"><span>Rendimento Bruto</span><span class="text-success fw-medium"><?= dflg_money($r['rendimentoBruto']) ?></span></div>
@@ -325,7 +296,7 @@ $r = $resultado;
                             </table>
                         <?php endif; ?>
 
-                    <?php elseif ($tipoAtivo === 'jurosCompostos'): ?>
+                    <?php elseif ($slug === 'juros-compostos'): ?>
                         <div class="row g-4 mb-4">
                             <div class="col-12 col-md-6">
                                 <div class="dflg-sim-result">
@@ -355,14 +326,14 @@ $r = $resultado;
                             </table>
                         <?php endif; ?>
 
-                    <?php elseif ($tipoAtivo === 'investimento'): ?>
+                    <?php elseif ($slug === 'investimentos'): ?>
                         <div class="dflg-sim-result">
                             <div class="dflg-sim-result-row"><span>Total Investido</span><span class="text-white fw-medium"><?= dflg_money($r['totalInvestido']) ?></span></div>
                             <div class="dflg-sim-result-row"><span>Rendimento</span><span class="text-success fw-medium"><?= dflg_money($r['rendimento']) ?></span></div>
                             <div class="dflg-sim-result-row dflg-sim-result-final"><span>Valor Final</span><span><?= dflg_money($r['valorFinal']) ?></span></div>
                         </div>
 
-                    <?php elseif ($tipoAtivo === 'rendaFixa'): ?>
+                    <?php elseif ($slug === 'renda-fixa'): ?>
                         <div class="dflg-sim-result">
                             <div class="dflg-sim-result-row"><span>Rendimento Bruto</span><span class="text-white fw-medium"><?= dflg_money($r['rendimentoBruto']) ?></span></div>
                             <div class="dflg-sim-result-row"><span>Imposto de Renda (<?= dflg_pct($r['aliquotaIR'], 1) ?>)</span><span class="text-danger fw-medium">- <?= dflg_money($r['valorIR']) ?></span></div>
@@ -370,7 +341,7 @@ $r = $resultado;
                             <div class="dflg-sim-result-row dflg-sim-result-final"><span>Valor Final Líquido</span><span><?= dflg_money($r['valorFinalLiquido']) ?></span></div>
                         </div>
 
-                    <?php elseif ($tipoAtivo === 'cdb'): ?>
+                    <?php elseif ($slug === 'cdb'): ?>
                         <div class="dflg-sim-result">
                             <div class="dflg-sim-result-row"><span>Taxa Anual Efetiva</span><span class="text-white fw-medium"><?= dflg_pct($r['taxaAnualEfetiva']) ?></span></div>
                             <div class="dflg-sim-result-row"><span>Rendimento Bruto</span><span class="text-white fw-medium"><?= dflg_money($r['rendimentoBruto']) ?></span></div>
@@ -378,7 +349,7 @@ $r = $resultado;
                             <div class="dflg-sim-result-row dflg-sim-result-final"><span>Valor Final Líquido</span><span><?= dflg_money($r['valorFinalLiquido']) ?></span></div>
                         </div>
 
-                    <?php elseif ($tipoAtivo === 'aposentadoria'): ?>
+                    <?php elseif ($slug === 'aposentadoria'): ?>
                         <div class="dflg-sim-result">
                             <div class="dflg-sim-result-row"><span>Tempo até a aposentadoria</span><span class="text-white fw-medium"><?= $r['anosAteAposentar'] ?> anos</span></div>
                             <div class="dflg-sim-result-row"><span>Patrimônio-alvo (renda perpétua)</span><span class="text-white fw-medium"><?= dflg_money($r['patrimonioAlvo']) ?></span></div>
@@ -386,14 +357,14 @@ $r = $resultado;
                             <div class="dflg-sim-result-row dflg-sim-result-final"><span>Aporte Mensal Necessário</span><span><?= dflg_money($r['aporteMensalNecessario']) ?></span></div>
                         </div>
 
-                    <?php elseif ($tipoAtivo === 'educacao'): ?>
+                    <?php elseif ($slug === 'educacao'): ?>
                         <div class="dflg-sim-result">
                             <div class="dflg-sim-result-row"><span>Total Aportado</span><span class="text-white fw-medium"><?= dflg_money($r['totalAportado']) ?></span></div>
                             <div class="dflg-sim-result-row"><span>Rendimento Estimado</span><span class="text-success fw-medium"><?= dflg_money($r['rendimentoEstimado']) ?></span></div>
                             <div class="dflg-sim-result-row dflg-sim-result-final"><span>Aporte Mensal Necessário</span><span><?= dflg_money($r['aporteMensalNecessario']) ?></span></div>
                         </div>
 
-                    <?php elseif ($tipoAtivo === 'emergencia'): ?>
+                    <?php elseif ($slug === 'reserva-emergencia'): ?>
                         <div class="dflg-sim-result">
                             <div class="dflg-sim-result-row dflg-sim-result-final"><span>Valor Ideal da Reserva</span><span><?= dflg_money($r['valorIdeal']) ?></span></div>
                         </div>
@@ -401,14 +372,14 @@ $r = $resultado;
                             <div class="dflg-sim-tip mt-3">🎯 Guardando o valor mensal informado, você atinge a reserva ideal em aproximadamente <strong><?= $r['mesesParaAtingir'] ?> meses</strong>.</div>
                         <?php endif; ?>
 
-                    <?php elseif ($tipoAtivo === 'viagem'): ?>
+                    <?php elseif ($slug === 'viagem'): ?>
                         <div class="dflg-sim-result">
                             <div class="dflg-sim-result-row"><span>Total Aportado</span><span class="text-white fw-medium"><?= dflg_money($r['totalAportado']) ?></span></div>
                             <div class="dflg-sim-result-row"><span>Rendimento Estimado</span><span class="text-success fw-medium"><?= dflg_money($r['rendimentoEstimado']) ?></span></div>
                             <div class="dflg-sim-result-row dflg-sim-result-final"><span>Aporte Mensal Necessário</span><span><?= dflg_money($r['aporteMensalNecessario']) ?></span></div>
                         </div>
 
-                    <?php elseif ($tipoAtivo === 'financiamentoImovel'): ?>
+                    <?php elseif ($slug === 'financiamento-imovel'): ?>
                         <div class="row g-4 mb-3">
                             <div class="col-12 col-md-6">
                                 <div class="dflg-sim-result">
@@ -429,7 +400,7 @@ $r = $resultado;
                         </div>
                         <div class="dflg-sim-tip">🏠 Financiando <?= dflg_money($r['valorFinanciado']) ?> em <?= $r['parcelas'] ?> parcelas: o SAC custa <?= dflg_money(abs($r['price']['totalPago'] - $r['sac']['totalPago'])) ?> <?= $r['sac']['totalPago'] < $r['price']['totalPago'] ? 'a menos' : 'a mais' ?> que o Price no total, mas começa com parcelas mais altas.</div>
 
-                    <?php elseif ($tipoAtivo === 'financiamentoVeiculo'): ?>
+                    <?php elseif ($slug === 'financiamento-veiculo'): ?>
                         <div class="dflg-sim-result">
                             <div class="dflg-sim-result-row"><span>Valor Financiado</span><span class="text-white fw-medium"><?= dflg_money($r['valorFinanciado']) ?></span></div>
                             <div class="dflg-sim-result-row"><span>Total de Juros</span><span class="text-danger fw-medium"><?= dflg_money($r['totalJuros']) ?></span></div>
@@ -438,6 +409,98 @@ $r = $resultado;
                         </div>
                     <?php endif; ?>
 
+                </div>
+
+                <!-- Saiba mais: passo a passo, fórmula, aplicações e exemplo (compacto, fechado por padrão) -->
+                <div class="accordion dflg-sim-accordion mt-4" id="acc-<?= htmlspecialchars($slug) ?>">
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#acc-passos-<?= htmlspecialchars($slug) ?>">
+                                <i class="bi bi-list-check text-success me-2"></i> Passo a passo de como usar
+                            </button>
+                        </h2>
+                        <div id="acc-passos-<?= htmlspecialchars($slug) ?>" class="accordion-collapse collapse" data-bs-parent="#acc-<?= htmlspecialchars($slug) ?>">
+                            <div class="accordion-body">
+                                <ol class="dflg-sim-steps">
+                                    <?php foreach ($info['passos'] as $passo): ?>
+                                        <li><?= htmlspecialchars($passo) ?></li>
+                                    <?php endforeach; ?>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#acc-formula-<?= htmlspecialchars($slug) ?>">
+                                <i class="bi bi-calculator text-success me-2"></i> Como o cálculo é feito
+                            </button>
+                        </h2>
+                        <div id="acc-formula-<?= htmlspecialchars($slug) ?>" class="accordion-collapse collapse" data-bs-parent="#acc-<?= htmlspecialchars($slug) ?>">
+                            <div class="accordion-body">
+                                <div class="dflg-sim-formula"><?= htmlspecialchars($info['formula']['expressao']) ?></div>
+                                <ul class="dflg-sim-legenda">
+                                    <?php foreach ($info['formula']['legenda'] as $termo => $significado): ?>
+                                        <li><strong><?= htmlspecialchars($termo) ?></strong> — <?= htmlspecialchars($significado) ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#acc-aplicacoes-<?= htmlspecialchars($slug) ?>">
+                                <i class="bi bi-lightbulb text-success me-2"></i> Para que serve na prática
+                            </button>
+                        </h2>
+                        <div id="acc-aplicacoes-<?= htmlspecialchars($slug) ?>" class="accordion-collapse collapse" data-bs-parent="#acc-<?= htmlspecialchars($slug) ?>">
+                            <div class="accordion-body">
+                                <ul class="dflg-sim-aplicacoes">
+                                    <?php foreach ($info['aplicacoes'] as $aplicacao): ?>
+                                        <li><i class="bi bi-check2"></i> <?= htmlspecialchars($aplicacao) ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#acc-exemplo-<?= htmlspecialchars($slug) ?>">
+                                <i class="bi bi-journal-text text-success me-2"></i> Exemplo prático
+                            </button>
+                        </h2>
+                        <div id="acc-exemplo-<?= htmlspecialchars($slug) ?>" class="accordion-collapse collapse" data-bs-parent="#acc-<?= htmlspecialchars($slug) ?>">
+                            <div class="accordion-body">
+                                🧮 <?= htmlspecialchars($info['exemplo']) ?>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ===================== Sidebar: outras calculadoras da categoria ===================== -->
+            <div class="col-12 col-lg-4">
+                <div class="dflg-panel dflg-sim-sidebar">
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <i class="bi bi-collection text-success"></i>
+                        <h2 class="mb-0" style="font-size:1.05rem;">Veja também</h2>
+                    </div>
+                    <div class="d-flex flex-column gap-2">
+                        <?php foreach ($relacionadas as $slugRel => $cRel): ?>
+                            <a href="<?= URL_BASE ?>/calculadoras/<?= urlencode($slugRel) ?>" class="dflg-sim-link">
+                                <i class="bi <?= $cRel['icone'] ?>"></i>
+                                <span><?= htmlspecialchars($cRel['nome']) ?></span>
+                            </a>
+                        <?php endforeach; ?>
+                        <a href="<?= URL_BASE ?>/calculadoras" class="dflg-sim-link mt-2">
+                            <i class="bi bi-grid"></i>
+                            <span>Ver todas as calculadoras</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

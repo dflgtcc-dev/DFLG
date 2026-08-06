@@ -89,9 +89,9 @@ class ParcelaController extends Controller
 
         $this->service->criar($parcela);
 
-        // Gamificação: mesma regra da tela de Transações (+10 pontos por lançamento registrado)
+        // Gamificação: mesma regra da tela de Transações — só no 1º lançamento do dia (RN07)
         if (isset($_SESSION['usuario_logado'])) {
-            (new UsuarioService())->adicionarPontos($_SESSION['usuario_logado']->getId(), 10);
+            (new UsuarioService())->adicionarPontosSeElegivel($_SESSION['usuario_logado']->getId(), 10);
         }
 
         $this->redirect(URL_BASE . '/parcelamentos');

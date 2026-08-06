@@ -26,21 +26,14 @@ function dflg_qs(array $filtrosAtuais, array $overrides = []): string
 }
 
 $filtrosAtuais = [
-    'periodo' => $periodo,
     'tipo' => $tipo,
     'categoria' => $categoria,
     'ordenar' => $ordenar,
     'busca' => $busca,
+    'dataInicio' => $dataInicio,
+    'dataFim' => $dataFim,
     'pagina' => $pagina,
     'tamanho' => $tamanhoPagina,
-];
-
-$periodLabels = [
-    'week' => 'Última semana',
-    'month' => 'Último mês',
-    '3months' => 'Últimos 3 meses',
-    '6months' => 'Últimos 6 meses',
-    'all' => 'Todo período',
 ];
 
 $exibindoDe = $totalTransacoes === 0 ? 0 : ($pagina - 1) * $tamanhoPagina + 1;
@@ -74,12 +67,46 @@ $exibindoAte = min($pagina * $tamanhoPagina, $totalTransacoes);
         <!-- ===================== Filtros ===================== -->
         <form method="get" action="<?= URL_BASE ?>/transacoes" id="formFiltros" class="d-flex flex-wrap gap-3 mb-4 align-items-center">
             <input type="hidden" name="pagina" value="1">
+            <input type="hidden" name="dataInicio" id="filtroDataInicio" value="<?= htmlspecialchars($dataInicio) ?>">
+            <input type="hidden" name="dataFim" id="filtroDataFim" value="<?= htmlspecialchars($dataFim) ?>">
 
-            <select name="periodo" class="dflg-input dflg-select-auto w-auto" onchange="this.form.submit()">
-                <?php foreach ($periodLabels as $valor => $label): ?>
-                    <option value="<?= $valor ?>" <?= $periodo === $valor ? 'selected' : '' ?>><?= $label ?></option>
-                <?php endforeach; ?>
-            </select>
+            <div class="dflg-dr" id="dflgDateRange">
+                <button type="button" class="dflg-dr-trigger" id="dflgDrTrigger">
+                    <i class="bi bi-calendar3"></i>
+                    <span id="dflgDrLabel">Todo período</span>
+                    <i class="bi bi-chevron-down small"></i>
+                </button>
+
+                <div class="dflg-dr-panel" id="dflgDrPanel">
+                    <div class="dflg-dr-presets" id="dflgDrPresets">
+                        <button type="button" data-preset="all">Todo período</button>
+                        <button type="button" data-preset="30d">Últimos 30 dias</button>
+                        <button type="button" data-preset="90d">Últimos 90 dias</button>
+                        <button type="button" data-preset="month">Este mês</button>
+                        <button type="button" data-preset="lastmonth">Mês passado</button>
+                        <button type="button" data-preset="6m">Últimos 6 meses</button>
+                        <button type="button" data-preset="year">Este ano</button>
+                        <button type="button" data-preset="lastyear">Ano passado</button>
+                    </div>
+
+                    <div class="dflg-dr-cal">
+                        <p class="dflg-dr-cal-caption">Selecione as datas</p>
+                        <div class="dflg-dr-cal-header">
+                            <button type="button" id="dflgDrPrev" class="dflg-dr-nav"><i class="bi bi-chevron-left"></i></button>
+                            <div class="flex-grow-1"></div>
+                            <button type="button" id="dflgDrNext" class="dflg-dr-nav"><i class="bi bi-chevron-right"></i></button>
+                        </div>
+                        <div class="dflg-dr-cal-grids" id="dflgDrGrids"></div>
+
+                        <div class="dflg-dr-footer">
+                            <span class="text-dflg-muted small" id="dflgDrSelectedLabel">Todo período</span>
+                            <button type="button" class="dflg-btn-solid-green px-3 py-2" id="dflgDrApply">
+                                <i class="bi bi-check-lg"></i> Aplicar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="dflg-pill-group">
                 <a href="<?= dflg_qs($filtrosAtuais, ['tipo' => 'all', 'pagina' => 1]) ?>" class="dflg-pill <?= $tipo === 'all' ? 'active' : '' ?>">Todas</a>
@@ -108,9 +135,7 @@ $exibindoAte = min($pagina * $tamanhoPagina, $totalTransacoes);
 
             <div class="flex-grow-1"></div>
 
-            <button type="button" class="dflg-btn-solid-green px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalNovaTransacao">
-                <i class="bi bi-plus-lg"></i> Nova Transação
-            </button>
+            
         </form>
 
         <!-- ===================== Cards de resumo ===================== -->
@@ -157,18 +182,27 @@ $exibindoAte = min($pagina * $tamanhoPagina, $totalTransacoes);
         <!-- ===================== Lista de transações ===================== -->
         <div class="dflg-panel">
 
-            <form method="get" action="<?= URL_BASE ?>/transacoes" class="mb-4">
-                <input type="hidden" name="periodo" value="<?= htmlspecialchars($periodo) ?>">
-                <input type="hidden" name="tipo" value="<?= htmlspecialchars($tipo) ?>">
-                <input type="hidden" name="categoria" value="<?= htmlspecialchars($categoria) ?>">
-                <input type="hidden" name="ordenar" value="<?= htmlspecialchars($ordenar) ?>">
-                <input type="hidden" name="tamanho" value="<?= $tamanhoPagina ?>">
-                <div class="dflg-input-group">
-                    <i class="bi bi-search dflg-input-icon"></i>
-                    <input type="text" name="busca" value="<?= htmlspecialchars($busca) ?>" class="dflg-input" placeholder="Buscar transação por descrição ou categoria...">
-                </div>
-            </form>
+            <form method="get"
+                action="<?= URL_BASE ?>/transacoes"
+                class="mb-4 d-flex align-items-center justify-content-between">
 
+                <div class="dflg-input-group" style="max-width: 300px; width: 100%;">
+                    <i class="bi bi-search dflg-input-icon"></i>
+                    <input type="text"
+                        name="busca"
+                        value="<?= htmlspecialchars($busca) ?>"
+                        class="dflg-input"
+                        placeholder="Buscar transações...">
+                </div>
+
+                <button type="button"
+                        class="dflg-btn-solid-green px-4 py-2 ms-3"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalNovaTransacao">
+                    <i class="bi bi-plus-lg"></i> Nova Transação
+                </button>
+
+            </form>
             <?php if (empty($transacoes)): ?>
                 <div class="text-center py-5 text-dflg-muted">
                     <i class="bi bi-search d-block mb-3" style="font-size: 2.5rem; opacity: .3;"></i>
@@ -199,11 +233,12 @@ $exibindoAte = min($pagina * $tamanhoPagina, $totalTransacoes);
                 <div class="d-flex align-items-center gap-3 text-dflg-muted small">
                     <span>Exibindo <?= $exibindoDe ?>–<?= $exibindoAte ?> de <?= $totalTransacoes ?> transações</span>
                     <form method="get" action="<?= URL_BASE ?>/transacoes">
-                        <input type="hidden" name="periodo" value="<?= htmlspecialchars($periodo) ?>">
                         <input type="hidden" name="tipo" value="<?= htmlspecialchars($tipo) ?>">
                         <input type="hidden" name="categoria" value="<?= htmlspecialchars($categoria) ?>">
                         <input type="hidden" name="ordenar" value="<?= htmlspecialchars($ordenar) ?>">
                         <input type="hidden" name="busca" value="<?= htmlspecialchars($busca) ?>">
+                        <input type="hidden" name="dataInicio" value="<?= htmlspecialchars($dataInicio) ?>">
+                        <input type="hidden" name="dataFim" value="<?= htmlspecialchars($dataFim) ?>">
                         <input type="hidden" name="pagina" value="1">
                         <select name="tamanho" class="dflg-input dflg-select-sm" onchange="this.form.submit()">
                             <?php foreach ([5, 10, 25] as $n): ?>
@@ -307,6 +342,185 @@ $exibindoAte = min($pagina * $tamanhoPagina, $totalTransacoes);
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // ===================== Seletor de intervalo de datas =====================
+        (function () {
+            const trigger = document.getElementById('dflgDrTrigger');
+            const panel = document.getElementById('dflgDrPanel');
+            const label = document.getElementById('dflgDrLabel');
+            const selectedLabel = document.getElementById('dflgDrSelectedLabel');
+            const gridsEl = document.getElementById('dflgDrGrids');
+            const inputInicio = document.getElementById('filtroDataInicio');
+            const inputFim = document.getElementById('filtroDataFim');
+
+            const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+            const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+
+            const pad = (n) => String(n).padStart(2, '0');
+            const iso = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+            const hoje = new Date();
+            const hojeIso = iso(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+
+            function fmtBR(dataIso) {
+                if (!dataIso) return '';
+                const [y, m, d] = dataIso.split('-');
+                return `${d}/${m}/${y.slice(2)}`;
+            }
+
+            let rangeStart = <?= json_encode($dataInicio ?: null) ?>;
+            let rangeEnd = <?= json_encode($dataFim ?: null) ?>;
+
+            // Mês exibido na coluna da esquerda (a da direita é sempre o mês seguinte)
+            let baseAno = hoje.getFullYear();
+            let baseMes = hoje.getMonth();
+            if (rangeStart) {
+                const [y, m] = rangeStart.split('-');
+                baseAno = parseInt(y, 10);
+                baseMes = parseInt(m, 10) - 1;
+            }
+
+            function atualizarLabelGatilho() {
+                if (!rangeStart && !rangeEnd) {
+                    label.textContent = 'Todo período';
+                } else if (rangeStart && rangeEnd) {
+                    label.textContent = fmtBR(rangeStart) + ' - ' + fmtBR(rangeEnd);
+                } else if (rangeStart) {
+                    label.textContent = 'A partir de ' + fmtBR(rangeStart);
+                } else {
+                    label.textContent = 'Até ' + fmtBR(rangeEnd);
+                }
+                selectedLabel.textContent = label.textContent;
+            }
+
+            function construirGradeMes(ano, mes) {
+                const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+                const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+                const diasMesAnterior = new Date(ano, mes, 0).getDate();
+
+                let celulasHtml = '';
+                const totalCelulas = Math.ceil((primeiroDiaSemana + diasNoMes) / 7) * 7;
+
+                for (let i = 0; i < totalCelulas; i++) {
+                    const diaNoMes = i - primeiroDiaSemana + 1;
+
+                    if (diaNoMes < 1) {
+                        celulasHtml += `<span class="dflg-dr-day is-other">${diasMesAnterior + diaNoMes}</span>`;
+                    } else if (diaNoMes > diasNoMes) {
+                        celulasHtml += `<span class="dflg-dr-day is-other">${diaNoMes - diasNoMes}</span>`;
+                    } else {
+                        const dataIso = iso(ano, mes, diaNoMes);
+                        let classes = 'dflg-dr-day';
+                        if (dataIso === hojeIso) classes += ' is-today';
+                        if (dataIso === rangeStart || dataIso === rangeEnd) classes += ' is-selected';
+                        if (rangeStart && rangeEnd && dataIso > rangeStart && dataIso < rangeEnd) classes += ' is-in-range';
+                        celulasHtml += `<button type="button" class="${classes}" data-date="${dataIso}">${diaNoMes}</button>`;
+                    }
+                }
+
+                return `
+                    <div class="dflg-dr-month">
+                        <p class="dflg-dr-month-title">${MESES[mes]} ${ano}</p>
+                        <div class="dflg-dr-weekdays">${DIAS_SEMANA.map(d => `<span>${d}</span>`).join('')}</div>
+                        <div class="dflg-dr-days">${celulasHtml}</div>
+                    </div>`;
+            }
+
+            function renderizar() {
+                let mes2 = baseMes + 1, ano2 = baseAno;
+                if (mes2 > 11) { mes2 = 0; ano2++; }
+
+                gridsEl.innerHTML = construirGradeMes(baseAno, baseMes) + construirGradeMes(ano2, mes2);
+
+                gridsEl.querySelectorAll('.dflg-dr-day[data-date]').forEach((el) => {
+                    el.addEventListener('click', () => selecionarDia(el.dataset.date));
+                });
+
+                atualizarLabelGatilho();
+            }
+
+            function selecionarDia(dataIso) {
+                if (!rangeStart || (rangeStart && rangeEnd)) {
+                    rangeStart = dataIso;
+                    rangeEnd = null;
+                } else if (dataIso < rangeStart) {
+                    rangeEnd = rangeStart;
+                    rangeStart = dataIso;
+                } else {
+                    rangeEnd = dataIso;
+                }
+                renderizar();
+            }
+
+            function aplicarPreset(preset) {
+                const y = hoje.getFullYear(), m = hoje.getMonth(), d = hoje.getDate();
+
+                switch (preset) {
+                    case 'all':
+                        rangeStart = null; rangeEnd = null;
+                        break;
+                    case '30d':
+                        rangeStart = iso(y, m, d - 30); rangeEnd = hojeIso;
+                        break;
+                    case '90d':
+                        rangeStart = iso(y, m, d - 90); rangeEnd = hojeIso;
+                        break;
+                    case 'month':
+                        rangeStart = iso(y, m, 1); rangeEnd = iso(y, m + 1, 0);
+                        break;
+                    case 'lastmonth':
+                        rangeStart = iso(y, m - 1, 1); rangeEnd = iso(y, m, 0);
+                        break;
+                    case '6m':
+                        rangeStart = iso(y, m - 6, d); rangeEnd = hojeIso;
+                        break;
+                    case 'year':
+                        rangeStart = iso(y, 0, 1); rangeEnd = iso(y, 11, 31);
+                        break;
+                    case 'lastyear':
+                        rangeStart = iso(y - 1, 0, 1); rangeEnd = iso(y - 1, 11, 31);
+                        break;
+                }
+
+                const refDate = rangeStart ? new Date(rangeStart) : hoje;
+                baseAno = refDate.getFullYear();
+                baseMes = refDate.getMonth();
+                renderizar();
+            }
+
+            document.getElementById('dflgDrPresets').addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-preset]');
+                if (btn) aplicarPreset(btn.dataset.preset);
+            });
+
+            document.getElementById('dflgDrPrev').addEventListener('click', () => {
+                baseMes--;
+                if (baseMes < 0) { baseMes = 11; baseAno--; }
+                renderizar();
+            });
+            document.getElementById('dflgDrNext').addEventListener('click', () => {
+                baseMes++;
+                if (baseMes > 11) { baseMes = 0; baseAno++; }
+                renderizar();
+            });
+
+            document.getElementById('dflgDrApply').addEventListener('click', () => {
+                inputInicio.value = rangeStart || '';
+                inputFim.value = rangeEnd || '';
+                document.getElementById('formFiltros').submit();
+            });
+
+            trigger.addEventListener('click', () => {
+                panel.classList.toggle('is-open');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!document.getElementById('dflgDateRange').contains(e.target)) {
+                    panel.classList.remove('is-open');
+                }
+            });
+
+            renderizar();
+        })();
+
         document.querySelectorAll('.dflg-type-opt input').forEach(function (radio) {
             radio.addEventListener('change', function () {
                 document.querySelectorAll('.dflg-type-opt').forEach(function (opt) { opt.classList.remove('active'); });

@@ -19,12 +19,13 @@ class TransacaoController extends Controller
 
     public function index()
     {
-        // --- Filtros vindos da query string (?periodo=&tipo=&categoria=&ordenar=&busca=&pagina=&tamanho=) ---
-        $periodo = $_GET['periodo'] ?? '3months';
+        // --- Filtros vindos da query string (?tipo=&categoria=&ordenar=&busca=&pagina=&tamanho=&dataInicio=&dataFim=) ---
         $tipo = $_GET['tipo'] ?? 'all';
         $categoria = $_GET['categoria'] ?? 'all';
         $ordenar = $_GET['ordenar'] ?? 'newest';
         $busca = trim($_GET['busca'] ?? '');
+        $dataInicio = trim($_GET['dataInicio'] ?? '');
+        $dataFim = trim($_GET['dataFim'] ?? '');
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
         $tamanhoPagina = (int) ($_GET['tamanho'] ?? 10);
         if (!in_array($tamanhoPagina, [5, 10, 25], true)) {
@@ -32,7 +33,8 @@ class TransacaoController extends Controller
         }
 
         $filtros = [
-            'dataInicio' => $this->service->dataInicioPeriodo($periodo),
+            'dataInicio' => $dataInicio ?: null,
+            'dataFim' => $dataFim ?: null,
             'tipo' => $tipo,
             'categoria' => $categoria,
             'busca' => $busca,
@@ -57,11 +59,12 @@ class TransacaoController extends Controller
             'activePage' => 'transactions',
             'transacoes' => $paginadas,
             'categorias' => TransacaoService::CATEGORIAS,
-            'periodo' => $periodo,
             'tipo' => $tipo,
             'categoria' => $categoria,
             'ordenar' => $ordenar,
             'busca' => $busca,
+            'dataInicio' => $dataInicio,
+            'dataFim' => $dataFim,
             'pagina' => $pagina,
             'tamanhoPagina' => $tamanhoPagina,
             'totalPaginas' => $totalPaginas,
@@ -116,10 +119,10 @@ class TransacaoController extends Controller
 
         $this->service->criar($transacao);
 
-        // Gamificação: +10 pontos por transação registrada (só para usuários logados)
+        // Gamificação: +10 pontos por transação registrada, só no 1º lançamento do dia (RN07)
         if (isset($_SESSION['usuario_logado'])) {
             $usuarioService = new UsuarioService();
-            $usuarioService->adicionarPontos($_SESSION['usuario_logado']->getId(), 10);
+            $usuarioService->adicionarPontosSeElegivel($_SESSION['usuario_logado']->getId(), 10);
         }
 
         $this->redirect(URL_BASE . '/transacoes');

@@ -53,6 +53,12 @@ class TransacaoService
         return $this->repository->getGastosPorCategoria($usuarioId);
     }
 
+    /** Gastos dia a dia de um mês — alimenta o Mapa de Calor do Dashboard com dados reais. */
+    public function gastosDiariosDoMes(?int $usuarioId, int $ano, int $mes): array
+    {
+        return $this->repository->getGastosDiariosDoMes($usuarioId, $ano, $mes);
+    }
+
     /** Converte o filtro de período ('week', 'month', '3months', '6months', 'all') em uma data mínima. */
     public function dataInicioPeriodo(string $periodo): ?string
     {

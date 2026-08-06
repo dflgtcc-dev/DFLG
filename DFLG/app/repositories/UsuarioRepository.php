@@ -25,12 +25,17 @@ class UsuarioRepository
 
     public function saveUsuario(Usuario $usuario): bool
     {
-        $sql = "INSERT INTO usuarios (nome_usuario, email, senha, perfil) VALUES (:nome, :email, :senha, :perfil)";
+        $sql = "INSERT INTO usuarios (nome_usuario, sobrenome, nickname, email, senha, perfil, cpf_cnpj, data_nascimento)
+                VALUES (:nome, :sobrenome, :nickname, :email, :senha, :perfil, :cpfCnpj, :dataNascimento)";
         $stmt = $this->connection->prepare($sql);
         $stmt->bindValue(':nome', $usuario->getNomeUsuario());
+        $stmt->bindValue(':sobrenome', $usuario->getSobrenome());
+        $stmt->bindValue(':nickname', $usuario->getNickname());
         $stmt->bindValue(':email', $usuario->getEmail());
         $stmt->bindValue(':senha', password_hash($usuario->getSenha(), PASSWORD_BCRYPT));
         $stmt->bindValue(':perfil', $usuario->getPerfil());
+        $stmt->bindValue(':cpfCnpj', $usuario->getCpfCnpj());
+        $stmt->bindValue(':dataNascimento', $usuario->getDataNascimento());
         return $stmt->execute();
     }
 
@@ -70,6 +75,22 @@ class UsuarioRepository
         return Usuario::arrayParaObjeto($usuario);
     }
 
+    /** Usado na validação de unicidade do nickname no cadastro (RN02). */
+    public function getUsuarioByNickname(string $nickname)
+    {
+        $sql = "SELECT * FROM usuarios WHERE nickname = :nickname";
+        $stmt = $this->connection->prepare($sql);
+        $stmt->bindValue(':nickname', $nickname);
+        $stmt->execute();
+        $usuario = $stmt->fetch();
+
+        if ($usuario == null) {
+            return false;
+        }
+
+        return Usuario::arrayParaObjeto($usuario);
+    }
+
     public function updateUsuario(Usuario $usuario): bool
     {
         $sql = "UPDATE usuarios SET nome_usuario = :nome, email = :email, perfil = :perfil WHERE id = :id";
@@ -82,13 +103,35 @@ class UsuarioRepository
     }
 
     /** Atualiza só os dados pessoais editáveis na tela de Perfil. */
-    public function atualizarDadosPessoais(int $id, string $nome, ?string $telefone, ?string $localizacao): bool
-    {
-        $sql = "UPDATE usuarios SET nome_usuario = :nome, telefone = :telefone, localizacao = :localizacao WHERE id = :id";
+    public function atualizarDadosPessoais(
+        int $id,
+        string $nome,
+        ?string $sobrenome,
+        ?string $nickname,
+        ?string $telefone,
+        ?string $localizacao,
+        ?string $dataNascimento
+    ): bool {
+        // Propositalmente sem cpf_cnpj: assim como email/senha, não é alterável por aqui.
+        $sql = "UPDATE usuarios SET nome_usuario = :nome, sobrenome = :sobrenome, nickname = :nickname,
+                    telefone = :telefone, localizacao = :localizacao, data_nascimento = :dataNascimento
+                WHERE id = :id";
         $stmt = $this->connection->prepare($sql);
         $stmt->bindValue(':nome', $nome);
+        $stmt->bindValue(':sobrenome', $sobrenome);
+        $stmt->bindValue(':nickname', $nickname);
         $stmt->bindValue(':telefone', $telefone);
         $stmt->bindValue(':localizacao', $localizacao);
+        $stmt->bindValue(':dataNascimento', $dataNascimento);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    /** Salva o nome do arquivo da foto de perfil já enviada para public/assets/img/perfil. */
+    public function atualizarFoto(int $id, string $nomeArquivo): bool
+    {
+        $stmt = $this->connection->prepare("UPDATE usuarios SET foto = :foto WHERE id = :id");
+        $stmt->bindValue(':foto', $nomeArquivo);
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         return $stmt->execute();
     }
@@ -100,6 +143,37 @@ class UsuarioRepository
         $stmt->bindValue(':pontos', $pontos, PDO::PARAM_INT);
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         return $stmt->execute();
+    }
+
+    /**
+     * RN07: a pontuação de XP só é contabilizada no primeiro registro
+     * financeiro (ou parcelamento) feito no dia — evita que o usuário
+     * "force" a subida de nível criando vários lançamentos falsos no
+     * mesmo dia. Retorna true se os pontos foram somados (1º do dia) e
+     * false se o usuário já havia ganhado XP hoje (pontos não somados).
+     */
+    public function adicionarPontosSeElegivel(int $id, int $pontos): bool
+    {
+        $stmt = $this->connection->prepare("SELECT data_ultimo_xp FROM usuarios WHERE id = :id");
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        $atual = $stmt->fetch();
+
+        $hoje = (new \DateTime('today'))->format('Y-m-d');
+        $dataUltimoXp = $atual['data_ultimo_xp'] ?? null;
+
+        if ($dataUltimoXp === $hoje) {
+            // Já ganhou XP hoje — não soma de novo.
+            return false;
+        }
+
+        $update = $this->connection->prepare(
+            "UPDATE usuarios SET pontos_totais = pontos_totais + :pontos, data_ultimo_xp = :hoje WHERE id = :id"
+        );
+        $update->bindValue(':pontos', $pontos, PDO::PARAM_INT);
+        $update->bindValue(':hoje', $hoje);
+        $update->bindValue(':id', $id, PDO::PARAM_INT);
+        return $update->execute();
     }
 
     /**

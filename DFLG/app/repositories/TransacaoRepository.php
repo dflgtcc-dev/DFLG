@@ -36,6 +36,11 @@ class TransacaoRepository
             $params[':dataInicio'] = $filtros['dataInicio'];
         }
 
+        if (!empty($filtros['dataFim'])) {
+            $sql .= " AND data_transacao <= :dataFim";
+            $params[':dataFim'] = $filtros['dataFim'];
+        }
+
         if (!empty($filtros['tipo']) && $filtros['tipo'] !== 'all') {
             $sql .= " AND tipo = :tipo";
             $params[':tipo'] = $filtros['tipo'];
@@ -98,6 +103,44 @@ class TransacaoRepository
         $stmt = $this->connection->prepare("DELETE FROM transacoes WHERE id = :id");
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         return $stmt->execute();
+    }
+
+    /**
+     * Soma as despesas dia a dia de um mês inteiro — é o que alimenta o
+     * Mapa de Calor do Dashboard com dados reais. Formato: [dia => total].
+     */
+    public function getGastosDiariosDoMes(?int $usuarioId, int $ano, int $mes): array
+    {
+        $inicio = sprintf('%04d-%02d-01', $ano, $mes);
+        $fim = date('Y-m-t', strtotime($inicio));
+
+        if ($usuarioId !== null) {
+            $sql = "SELECT DAY(data_transacao) AS dia, SUM(valor) AS total
+                    FROM transacoes
+                    WHERE tipo = 'despesa' AND data_transacao BETWEEN :inicio AND :fim
+                      AND (usuario_id = :usuario_id OR usuario_id IS NULL)
+                    GROUP BY DAY(data_transacao)";
+            $stmt = $this->connection->prepare($sql);
+            $stmt->bindValue(':usuario_id', $usuarioId, PDO::PARAM_INT);
+        } else {
+            $sql = "SELECT DAY(data_transacao) AS dia, SUM(valor) AS total
+                    FROM transacoes
+                    WHERE tipo = 'despesa' AND data_transacao BETWEEN :inicio AND :fim
+                      AND usuario_id IS NULL
+                    GROUP BY DAY(data_transacao)";
+            $stmt = $this->connection->prepare($sql);
+        }
+
+        $stmt->bindValue(':inicio', $inicio);
+        $stmt->bindValue(':fim', $fim);
+        $stmt->execute();
+
+        $resultado = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $linha) {
+            $resultado[(int) $linha['dia']] = (float) $linha['total'];
+        }
+
+        return $resultado;
     }
 
     /** Últimas transações registradas por um usuário — usado nas "Atividades Recentes" do perfil. */

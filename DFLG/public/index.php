@@ -23,8 +23,10 @@ $router->get('/logout', 'AutenticacaoController@logout');
 $router->get('/transacoes', 'TransacaoController@index');
 $router->post('/transacoes', 'TransacaoController@criar');
 
-// Calculadoras
+// Calculadoras — /calculadoras é o hub (grade com todas), cada uma abre
+// em sua própria página/aba: /calculadoras/tesouro-direto, etc (RF10 / UC-10)
 $router->get('/calculadoras', 'SimuladorController@index');
+$router->get('/calculadoras/{slug}', 'SimuladorController@calculadora');
 
 // Categorias
 $router->get('/categorias', 'CategoriaController@index');
@@ -33,6 +35,14 @@ $router->post('/categorias', 'CategoriaController@atualizar');
 // Parcelamentos
 $router->get('/parcelamentos', 'ParcelaController@index');
 $router->post('/parcelamentos', 'ParcelaController@criar');
+
+// Metas financeiras (RF08 / RF19)
+$router->get('/metas', 'MetaController@index');
+$router->post('/metas', 'MetaController@criar');
+$router->post('/metas/{id}/atualizar', 'MetaController@atualizar');
+$router->post('/metas/{id}/excluir', 'MetaController@excluir');
+$router->post('/metas/{id}/aportar', 'MetaController@aportar');
+$router->post('/metas/{id}/fixar', 'MetaController@fixar');
 
 // Usuário / Perfil
 $router->get('/perfil', 'UsuarioController@perfil');

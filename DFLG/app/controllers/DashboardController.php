@@ -3,7 +3,9 @@
 namespace app\controllers;
 
 use app\core\Controller;
+use app\services\MetaService;
 use app\services\ParcelaService;
+use app\services\TransacaoService;
 
 class DashboardController extends Controller
 {
@@ -18,7 +20,14 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        // $this->autenticacaoRequired();
+        // RN11: sem login, só entra aqui vindo do botão "Demonstração" da Home
+        // (que seta essa flag antes de redirecionar) — qualquer outro acesso
+        // direto e não autenticado ainda vai pra Home, como antes.
+        $modoDemo = !isset($_SESSION['usuario_logado']) && !empty($_SESSION['modo_demo']);
+
+        if (!isset($_SESSION['usuario_logado']) && !$modoDemo) {
+            $this->redirect(URL_BASE . '/');
+        }
 
         $totalReceitas = 8500.00;
         $despesasRealizadas = 5200.00;
@@ -34,9 +43,23 @@ class DashboardController extends Controller
         $totalDespesas = $despesasRealizadas + $parcelamentosDoMes;
         $saldo = $totalReceitas - $totalDespesas;
 
-        $metaValor = 10000.00;
-        $metaAtual = 6500.00;
-        $metaProgresso = (int) round(($metaAtual / $metaValor) * 100);
+        // Metas: as até 3 exibidas aqui são as fixadas pelo usuário (menu de
+        // "..." em /metas) + as mais próximas de bater 100%, nessa ordem.
+        $metaService = new MetaService();
+        $metas = $metaService->listarParaDashboard($usuarioId, 3);
+        $todasMetasAtivas = array_values(array_filter($metaService->listar($usuarioId), fn($m) => !$m['concluida']));
+
+        // O card "Meta Atual" no topo reflete a meta de maior prioridade
+        // (a primeira da lista acima), pra dar uma noção rápida do progresso.
+        if (!empty($metas)) {
+            $metaValor = (float) $metas[0]['valor_meta'];
+            $metaAtual = (float) $metas[0]['valor_atual'];
+            $metaProgresso = $metas[0]['percentual'];
+        } else {
+            $metaValor = 0.0;
+            $metaAtual = 0.0;
+            $metaProgresso = 0;
+        }
 
         // Receitas x Despesas (últimos 7 meses)
         $graficoMensal = [
@@ -61,15 +84,11 @@ class DashboardController extends Controller
             ['nome' => 'Outros',       'valor' => 450,  'cor' => '#8B5CF6'],
         ];
 
-        // Mapa de calor de gastos diários (ano, mês e dia "hoje" fixos para o mock)
-        $heatMapAno = 2026;
-        $heatMapMes = 6; // Junho
-        $heatMapHoje = 18;
-        $gastosDiarios = [
-            3 => 120, 5 => 1800, 6 => 430, 7 => 340, 8 => 180,
-            9 => 55, 10 => 142, 11 => 38, 12 => 87, 13 => 199,
-            14 => 22, 15 => 210, 16 => 155, 17 => 48,
-        ];
+        // Mapa de calor de gastos diários — agora com dados reais do mês atual
+        $heatMapAno = (int) date('Y');
+        $heatMapMes = (int) date('n');
+        $heatMapHoje = (int) date('j');
+        $gastosDiarios = (new TransacaoService())->gastosDiariosDoMes($usuarioId, $heatMapAno, $heatMapMes);
 
         // Transações recentes
         $transacoesRecentes = [
@@ -80,13 +99,6 @@ class DashboardController extends Controller
             ['descricao' => 'Spotify',            'categoria' => 'Lazer',       'tipo' => 'despesa', 'valor' => 22,  'data' => '2026-06-14'],
             ['descricao' => 'Curso online',       'categoria' => 'Educação',    'tipo' => 'despesa', 'valor' => 199, 'data' => '2026-06-13'],
             ['descricao' => 'Farmácia',           'categoria' => 'Saúde',       'tipo' => 'despesa', 'valor' => 87,  'data' => '2026-06-12'],
-        ];
-
-        // Metas
-        $metas = [
-            ['nome' => 'Viagem',               'valorAtual' => 6500,  'valorAlvo' => 10000],
-            ['nome' => 'Reserva de Emergência', 'valorAtual' => 12000, 'valorAlvo' => 15000],
-            ['nome' => 'Carro Novo',            'valorAtual' => 18000, 'valorAlvo' => 50000],
         ];
 
         // Próximos parcelamentos (os 3 mais próximos de vencer, entre os ativos)
@@ -102,6 +114,7 @@ class DashboardController extends Controller
 
         $this->view('dashboard/index', [
             'activePage' => 'overview',
+            'modoDemo' => $modoDemo,
             'totalReceitas' => $totalReceitas,
             'totalDespesas' => $totalDespesas,
             'parcelamentosDoMes' => $parcelamentosDoMes,
@@ -117,6 +130,7 @@ class DashboardController extends Controller
             'gastosDiarios' => $gastosDiarios,
             'transacoesRecentes' => $transacoesRecentes,
             'metas' => $metas,
+            'todasMetasAtivas' => $todasMetasAtivas,
             'proximasParcelas' => $proximasParcelas,
             'totalParcelasMes' => $totalParcelasMes,
         ]);

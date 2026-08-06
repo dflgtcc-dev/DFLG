@@ -4,7 +4,15 @@ $erros = $erros ?? [];
 $errosCadastro = $errosCadastro ?? [];
 $emailAntigo = $emailAntigo ?? '';
 $nomeAntigo = $nomeAntigo ?? '';
+$sobrenomeAntigo = $sobrenomeAntigo ?? '';
+$nicknameAntigo = $nicknameAntigo ?? '';
 $emailAntigoCadastro = $emailAntigoCadastro ?? '';
+$cpfCnpjAntigo = $cpfCnpjAntigo ?? '';
+$naoPossuiCpfAntigo = $naoPossuiCpfAntigo ?? false;
+$dataNascimentoAntiga = $dataNascimentoAntiga ?? '';
+// Se algum erro de validação veio dos campos da 2ª etapa, a tela já reabre
+// direto nela em vez de voltar pro passo 1 (email/senha).
+$cadastroEtapa2 = $cadastroEtapa2 ?? false;
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -126,7 +134,7 @@ $emailAntigoCadastro = $emailAntigoCadastro ?? '';
                         </button>
                     </form>
 
-                    <!-- ---------- Formulário de Cadastro ---------- -->
+                    <!-- ---------- Formulário de Cadastro (2 etapas) ---------- -->
                     <form id="formCadastro" action="<?= URL_BASE ?>/cadastro" method="post" class="dflg-auth-form <?= $abaInicial === 'cadastro' ? '' : 'd-none' ?>">
 
                         <?php if (!empty($errosCadastro)): ?>
@@ -137,36 +145,90 @@ $emailAntigoCadastro = $emailAntigoCadastro ?? '';
                             </div>
                         <?php endif; ?>
 
-                        <div class="mb-3">
-                            <label class="dflg-auth-label">Nome completo</label>
-                            <div class="dflg-input-group">
-                                <i class="bi bi-person dflg-input-icon"></i>
-                                <input type="text" name="nome" class="dflg-input" placeholder="João Silva" value="<?= htmlspecialchars($nomeAntigo) ?>" required>
+                        <!-- ===== Etapa 1: só e-mail e senha, igual à tela de Entrar ===== -->
+                        <div id="cadastroStep1" class="<?= $cadastroEtapa2 ? 'd-none' : '' ?>">
+
+                            <div class="mb-3">
+                                <label class="dflg-auth-label">E-mail</label>
+                                <div class="dflg-input-group">
+                                    <i class="bi bi-envelope dflg-input-icon"></i>
+                                    <input type="email" name="email" id="cadastroEmail" class="dflg-input" placeholder="seu@email.com" value="<?= htmlspecialchars($emailAntigoCadastro) ?>" required>
+                                </div>
                             </div>
+
+                            <div class="mb-3">
+                                <label class="dflg-auth-label">Senha</label>
+                                <div class="dflg-input-group">
+                                    <i class="bi bi-lock dflg-input-icon"></i>
+                                    <input type="password" name="senha" id="senhaCadastro" class="dflg-input dflg-input-has-toggle" placeholder="••••••••" minlength="6" required>
+                                    <button type="button" class="dflg-input-toggle" onclick="dflgTogglePassword('senhaCadastro', this)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button type="button" class="dflg-auth-submit mt-2" onclick="dflgCadastroAvancar()">
+                                Continuar <i class="bi bi-arrow-right"></i>
+                            </button>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="dflg-auth-label">E-mail</label>
-                            <div class="dflg-input-group">
-                                <i class="bi bi-envelope dflg-input-icon"></i>
-                                <input type="email" name="email" class="dflg-input" placeholder="seu@email.com" value="<?= htmlspecialchars($emailAntigoCadastro) ?>" required>
-                            </div>
-                        </div>
+                        <!-- ===== Etapa 2: dados pessoais completos (RF01) ===== -->
+                        <div id="cadastroStep2" class="<?= $cadastroEtapa2 ? '' : 'd-none' ?>">
 
-                        <div class="mb-3">
-                            <label class="dflg-auth-label">Senha</label>
-                            <div class="dflg-input-group">
-                                <i class="bi bi-lock dflg-input-icon"></i>
-                                <input type="password" name="senha" id="senhaCadastro" class="dflg-input dflg-input-has-toggle" placeholder="••••••••" required>
-                                <button type="button" class="dflg-input-toggle" onclick="dflgTogglePassword('senhaCadastro', this)">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                            </div>
-                        </div>
+                            <button type="button" class="dflg-auth-back-btn mb-3" onclick="dflgCadastroVoltar()">
+                                <i class="bi bi-arrow-left"></i> Voltar
+                            </button>
 
-                        <button type="submit" class="dflg-auth-submit mt-2">
-                            Criar minha conta <i class="bi bi-arrow-right"></i>
-                        </button>
+                            <div class="row g-3">
+                                <div class="col-12 col-sm-6">
+                                    <label class="dflg-auth-label">Primeiro nome</label>
+                                    <div class="dflg-input-group">
+                                        <i class="bi bi-person dflg-input-icon"></i>
+                                        <input type="text" name="nome" class="dflg-input" placeholder="João" value="<?= htmlspecialchars($nomeAntigo) ?>" required>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    <label class="dflg-auth-label">Sobrenome</label>
+                                    <div class="dflg-input-group">
+                                        <i class="bi bi-person dflg-input-icon"></i>
+                                        <input type="text" name="sobrenome" class="dflg-input" placeholder="Silva" value="<?= htmlspecialchars($sobrenomeAntigo) ?>" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3 mt-3">
+                                <label class="dflg-auth-label">Nickname</label>
+                                <div class="dflg-input-group">
+                                    <i class="bi bi-at dflg-input-icon"></i>
+                                    <input type="text" name="nickname" class="dflg-input" placeholder="joaosilva" value="<?= htmlspecialchars($nicknameAntigo) ?>" minlength="3" maxlength="20" pattern="[a-zA-Z0-9._]{3,20}" title="3 a 20 caracteres: letras, números, ponto ou underline" required>
+                                </div>
+                                <small class="dflg-auth-hint">Como você vai aparecer no ranking. Só letras, números, ponto ou underline.</small>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="dflg-auth-label">CPF/CNPJ</label>
+                                <div class="dflg-input-group">
+                                    <i class="bi bi-card-text dflg-input-icon"></i>
+                                    <input type="text" name="cpfCnpj" id="cadastroCpfCnpj" class="dflg-input" placeholder="000.000.000-00" value="<?= htmlspecialchars($cpfCnpjAntigo) ?>" <?= $naoPossuiCpfAntigo ? 'disabled' : 'required' ?>>
+                                </div>
+                            </div>
+                            <label class="dflg-auth-remember mb-3">
+                                <input type="checkbox" name="naoPossuiCpf" id="cadastroNaoPossuiCpf" onchange="dflgToggleCpf()" <?= $naoPossuiCpfAntigo ? 'checked' : '' ?>>
+                                Não possuo CPF/CNPJ
+                            </label>
+
+                            <div class="mb-3">
+                                <label class="dflg-auth-label">Data de nascimento</label>
+                                <div class="dflg-input-group">
+                                    <i class="bi bi-calendar3 dflg-input-icon"></i>
+                                    <input type="date" name="dataNascimento" class="dflg-input" value="<?= htmlspecialchars($dataNascimentoAntiga) ?>" required>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="dflg-auth-submit mt-2">
+                                Criar minha conta <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
 
                         <p class="dflg-auth-terms">
                             Ao criar uma conta, você concorda com nossos
@@ -218,6 +280,39 @@ $emailAntigoCadastro = $emailAntigoCadastro ?? '';
             var mostrando = input.type === 'text';
             input.type = mostrando ? 'password' : 'text';
             btn.innerHTML = mostrando ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+        }
+
+        // Avança da etapa 1 (e-mail/senha) para a etapa 2 (dados pessoais) do cadastro.
+        // Valida os campos da etapa 1 antes de trocar de tela.
+        function dflgCadastroAvancar() {
+            var step1 = document.getElementById('cadastroStep1');
+            var camposObrigatorios = step1.querySelectorAll('[required]');
+
+            for (var i = 0; i < camposObrigatorios.length; i++) {
+                if (!camposObrigatorios[i].checkValidity()) {
+                    camposObrigatorios[i].reportValidity();
+                    return;
+                }
+            }
+
+            step1.classList.add('d-none');
+            document.getElementById('cadastroStep2').classList.remove('d-none');
+        }
+
+        function dflgCadastroVoltar() {
+            document.getElementById('cadastroStep2').classList.add('d-none');
+            document.getElementById('cadastroStep1').classList.remove('d-none');
+        }
+
+        // Quando o usuário marca "Não possuo CPF/CNPJ", o campo deixa de ser obrigatório.
+        function dflgToggleCpf() {
+            var checkbox = document.getElementById('cadastroNaoPossuiCpf');
+            var campo = document.getElementById('cadastroCpfCnpj');
+            campo.disabled = checkbox.checked;
+            campo.required = !checkbox.checked;
+            if (checkbox.checked) {
+                campo.value = '';
+            }
         }
     </script>
 </body>

@@ -55,52 +55,57 @@ function dflg_data_atividade(string $data): string
                         </button>
                     </div>
 
-                    <div class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start gap-4 mb-4 text-center text-sm-start">
-                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=<?= urlencode($usuario->getNomeUsuario()) ?>" alt="Avatar" class="dflg-profile-avatar">
+                    <div class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start gap-3 mb-4 text-center text-sm-start">
+                        <?php if ($usuario->getFoto()): ?>
+                            <img src="<?= URL_BASE ?>/assets/img/perfil/<?= htmlspecialchars($usuario->getFoto()) ?>" alt="Foto de perfil" class="dflg-profile-avatar">
+                        <?php else: ?>
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=<?= urlencode($usuario->getNomeUsuario()) ?>" alt="Avatar" class="dflg-profile-avatar">
+                        <?php endif; ?>
                         <div>
-                            <h3 class="dflg-profile-name"><?= htmlspecialchars($usuario->getNomeUsuario()) ?></h3>
-                            <p class="text-dflg-muted mb-3">Membro desde <?= dflg_membro_desde($usuario->getCriadoEm(), $mesesPt) ?></p>
+                            <h3 class="dflg-profile-name mb-1"><?= htmlspecialchars(trim($usuario->getNomeUsuario() . ' ' . ($usuario->getSobrenome() ?? ''))) ?></h3>
+                            <p class="text-dflg-muted mb-2">@<?= htmlspecialchars($usuario->getNickname() ?: '—') ?> · Membro desde <?= dflg_membro_desde($usuario->getCriadoEm(), $mesesPt) ?></p>
                             <span class="dflg-level-badge">
                                 <i class="bi bi-award"></i> Nível <?= $nivel['nivel'] ?>
                             </span>
                         </div>
                     </div>
 
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <div class="dflg-info-item">
-                                <i class="bi bi-envelope"></i>
-                                <div>
-                                    <p class="label">Email</p>
-                                    <p class="value"><?= htmlspecialchars($usuario->getEmail()) ?></p>
-                                </div>
+                    <div class="dflg-info-list">
+                        <div class="dflg-info-row">
+                            <span class="dflg-info-icon"><i class="bi bi-envelope"></i></span>
+                            <div>
+                                <p class="label">Email</p>
+                                <p class="value"><?= htmlspecialchars($usuario->getEmail()) ?></p>
+                            </div>
+                            <span class="dflg-locked-badge" title="Não pode ser alterado por aqui"><i class="bi bi-lock-fill"></i> fixo</span>
+                        </div>
+                        <div class="dflg-info-row">
+                            <span class="dflg-info-icon"><i class="bi bi-card-text"></i></span>
+                            <div>
+                                <p class="label">CPF/CNPJ</p>
+                                <p class="value"><?= htmlspecialchars($usuario->getCpfCnpj() ?: 'Não informado') ?></p>
+                            </div>
+                            <span class="dflg-locked-badge" title="Não pode ser alterado por aqui"><i class="bi bi-lock-fill"></i> fixo</span>
+                        </div>
+                        <div class="dflg-info-row">
+                            <span class="dflg-info-icon"><i class="bi bi-telephone"></i></span>
+                            <div>
+                                <p class="label">Telefone</p>
+                                <p class="value"><?= htmlspecialchars($usuario->getTelefone() ?: 'Não informado') ?></p>
                             </div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="dflg-info-item">
-                                <i class="bi bi-telephone"></i>
-                                <div>
-                                    <p class="label">Telefone</p>
-                                    <p class="value"><?= htmlspecialchars($usuario->getTelefone() ?: 'Não informado') ?></p>
-                                </div>
+                        <div class="dflg-info-row">
+                            <span class="dflg-info-icon"><i class="bi bi-geo-alt"></i></span>
+                            <div>
+                                <p class="label">Localização</p>
+                                <p class="value"><?= htmlspecialchars($usuario->getLocalizacao() ?: 'Não informado') ?></p>
                             </div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="dflg-info-item">
-                                <i class="bi bi-geo-alt"></i>
-                                <div>
-                                    <p class="label">Localização</p>
-                                    <p class="value"><?= htmlspecialchars($usuario->getLocalizacao() ?: 'Não informado') ?></p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <div class="dflg-info-item">
-                                <i class="bi bi-calendar3"></i>
-                                <div>
-                                    <p class="label">Membro desde</p>
-                                    <p class="value"><?= dflg_membro_desde($usuario->getCriadoEm(), $mesesPt) ?></p>
-                                </div>
+                        <div class="dflg-info-row">
+                            <span class="dflg-info-icon"><i class="bi bi-cake2"></i></span>
+                            <div>
+                                <p class="label">Data de nascimento</p>
+                                <p class="value"><?= $usuario->getDataNascimento() ? (new \DateTime($usuario->getDataNascimento()))->format('d/m/Y') : 'Não informado' ?></p>
                             </div>
                         </div>
                     </div>
@@ -155,7 +160,7 @@ function dflg_data_atividade(string $data): string
                         <p class="text-dflg-muted mb-0 mt-2">no ranking geral</p>
                     </div>
 
-                    <div class="dflg-ranking-points mb-3">
+                    <div class="dflg-ranking-points">
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <span class="text-dflg-muted small">Pontos Totais</span>
                             <span class="text-success fs-5 fw-semibold"><?= number_format($usuario->getPontosTotais(), 0, ',', '.') ?></span>
@@ -170,48 +175,48 @@ function dflg_data_atividade(string $data): string
                 </div>
 
                 <!-- Streak de acesso -->
-                <div class="dflg-panel">
-                    <div class="d-flex align-items-center gap-2 mb-4">
-                        <i class="bi bi-fire" style="color: var(--dflg-orange-500); font-size: 1.3rem;"></i>
-                        <h2 class="mb-0" style="font-size: 1.15rem;">Streak de Acesso</h2>
+                <div class="dflg-panel mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="bi bi-fire" style="color: var(--dflg-orange-500); font-size: 1.2rem;"></i>
+                        <h2 class="mb-0" style="font-size: 1.1rem;">Streak de Acesso</h2>
                     </div>
 
-                    <div class="text-center mb-4">
-                        <div class="dflg-streak-badge">
-                            <i class="bi bi-fire"></i>
-                            <span class="num"><?= $usuario->getSequenciaAtual() ?></span>
-                            <span class="unit">dias</span>
-                        </div>
-                        <p class="text-dflg-muted small mt-3 mb-0">Sequência atual</p>
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="dflg-streak-badge-sm"><i class="bi bi-fire"></i> <?= $usuario->getSequenciaAtual() ?></span>
+                        <span class="text-dflg-muted small">dias seguidos</span>
                     </div>
 
-                    <div class="d-flex flex-column gap-3">
-                        <div class="dflg-streak-row">
-                            <span class="text-dflg-muted small">Maior sequência</span>
-                            <span class="d-flex align-items-center gap-2 text-white fw-semibold">
-                                <i class="bi bi-trophy" style="color: #eab308;"></i> <?= $usuario->getMaiorSequencia() ?> dias
-                            </span>
-                        </div>
-                        <div class="dflg-streak-row">
-                            <span class="text-dflg-muted small">Último acesso</span>
-                            <span class="d-flex align-items-center gap-2 text-white fw-medium">
-                                <i class="bi bi-calendar3 text-success"></i>
-                                <?= $usuario->getUltimoAcesso() ? (new \DateTime($usuario->getUltimoAcesso()))->format('d/m/Y') : '—' ?>
-                            </span>
-                        </div>
+                    <div class="dflg-streak-row">
+                        <span class="text-dflg-muted small">Maior sequência</span>
+                        <span class="d-flex align-items-center gap-2 text-white fw-semibold small">
+                            <i class="bi bi-trophy" style="color: #eab308;"></i> <?= $usuario->getMaiorSequencia() ?> dias
+                        </span>
+                    </div>
+                    <div class="dflg-streak-row">
+                        <span class="text-dflg-muted small">Último acesso</span>
+                        <span class="d-flex align-items-center gap-2 text-white fw-medium small">
+                            <i class="bi bi-calendar3 text-success"></i>
+                            <?= $usuario->getUltimoAcesso() ? (new \DateTime($usuario->getUltimoAcesso()))->format('d/m/Y') : '—' ?>
+                        </span>
                     </div>
 
-                    <div class="dflg-streak-tip mt-4">
+                    <div class="dflg-streak-tip mt-3">
                         <i class="bi bi-fire"></i>
                         <span>Continue acessando diariamente para manter sua sequência ativa e ganhar mais pontos!</span>
                     </div>
                 </div>
 
-                <!-- Logout -->
-                <div class="mt-4">
-                    <a href="<?= URL_BASE ?>/logout" class="dflg-profile-logout">
-                        <i class="bi bi-box-arrow-right"></i>
-                        <span>Sair da conta</span>
+                <!-- Sair da conta -->
+                <div class="dflg-logout-card mt-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="dflg-logout-icon"><i class="bi bi-box-arrow-right"></i></span>
+                        <div>
+                            <p class="mb-0 text-white fw-medium">Sair da conta</p>
+                            <p class="mb-0 text-dflg-muted small">Você precisará entrar novamente</p>
+                        </div>
+                    </div>
+                    <a href="<?= URL_BASE ?>/logout" class="dflg-logout-btn" onclick="return confirm('Tem certeza que deseja sair da sua conta?')">
+                        Sair <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
             </div>
@@ -222,7 +227,7 @@ function dflg_data_atividade(string $data): string
     <div class="modal fade" id="modalEditarPerfil" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content dflg-modal">
-                <form method="post" action="<?= URL_BASE ?>/perfil">
+                <form method="post" action="<?= URL_BASE ?>/perfil" enctype="multipart/form-data">
                     <div class="modal-header border-0 pb-0">
                         <h2 class="modal-title">Editar Perfil</h2>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
@@ -236,10 +241,46 @@ function dflg_data_atividade(string $data): string
                             </div>
                         <?php endif; ?>
 
-                        <div class="mb-3">
-                            <label class="dflg-auth-label">Nome completo</label>
-                            <input type="text" name="nome" class="dflg-input" style="padding-left:1rem;" value="<?= htmlspecialchars($usuario->getNomeUsuario()) ?>">
+                        <!-- Foto de perfil -->
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <img id="previewFotoPerfil"
+                                 src="<?= $usuario->getFoto() ? URL_BASE . '/assets/img/perfil/' . htmlspecialchars($usuario->getFoto()) : 'https://api.dicebear.com/7.x/avataaars/svg?seed=' . urlencode($usuario->getNomeUsuario()) ?>"
+                                 alt="Foto de perfil" class="dflg-profile-avatar-sm">
+                            <div>
+                                <label for="inputFotoPerfil" class="dflg-btn-outline-green dflg-btn-sm" style="cursor:pointer;">
+                                    <i class="bi bi-upload me-1"></i> Trocar foto
+                                </label>
+                                <input type="file" name="foto" id="inputFotoPerfil" accept="image/png, image/jpeg, image/webp" class="d-none" onchange="dflgPreviewFoto(event)">
+                                <p class="text-dflg-muted small mb-0 mt-1">JPG, PNG ou WEBP até 3MB</p>
+                            </div>
                         </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-sm-6">
+                                <label class="dflg-auth-label">Primeiro nome</label>
+                                <input type="text" name="nome" class="dflg-input" style="padding-left:1rem;" value="<?= htmlspecialchars($usuario->getNomeUsuario()) ?>">
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="dflg-auth-label">Sobrenome</label>
+                                <input type="text" name="sobrenome" class="dflg-input" style="padding-left:1rem;" value="<?= htmlspecialchars($usuario->getSobrenome() ?? '') ?>">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="dflg-auth-label">Nickname</label>
+                            <input type="text" name="nickname" class="dflg-input" style="padding-left:1rem;" minlength="3" maxlength="20" pattern="[a-zA-Z0-9._]{3,20}" value="<?= htmlspecialchars($usuario->getNickname() ?? '') ?>">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="dflg-auth-label">Data de nascimento</label>
+                            <input type="date" name="dataNascimento" class="dflg-input" style="padding-left:1rem;" value="<?= htmlspecialchars($usuario->getDataNascimento() ?? '') ?>">
+                        </div>
+
+                        <div class="dflg-info-note mb-3">
+                            <i class="bi bi-lock-fill"></i>
+                            E-mail e CPF/CNPJ não podem ser alterados por aqui, assim como a senha.
+                        </div>
+
                         <div class="mb-3">
                             <label class="dflg-auth-label">Telefone</label>
                             <input type="text" name="telefone" class="dflg-input" style="padding-left:1rem;" placeholder="(11) 98765-4321" value="<?= htmlspecialchars($usuario->getTelefone() ?? '') ?>">
@@ -260,6 +301,13 @@ function dflg_data_atividade(string $data): string
 
    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function dflgPreviewFoto(event) {
+            var arquivo = event.target.files[0];
+            if (!arquivo) return;
+            document.getElementById('previewFotoPerfil').src = URL.createObjectURL(arquivo);
+        }
+    </script>
     <?php if (!empty($erros)): ?>
         <script>
             document.addEventListener('DOMContentLoaded', function () {

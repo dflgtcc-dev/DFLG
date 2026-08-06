@@ -23,6 +23,7 @@ class AutenticacaoService {
             // já com os pontos/streak em dia antes de guardar na sessão.
             $this->usuarioRepository->registrarAcesso($usuario->getId());
             $_SESSION['usuario_logado'] = $this->usuarioRepository->getUsuarioCompletoById($usuario->getId());
+            unset($_SESSION['modo_demo']);
             return true;
             
         }

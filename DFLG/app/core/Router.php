@@ -45,11 +45,25 @@ class Router
 
         $method = strtolower($_SERVER['REQUEST_METHOD']);
 
+        // 1ª passada: rotas exatas (mantém o comportamento original, sem custo extra de regex)
         foreach ($this->routes as $route) {
-        
+
             if ($route['route'] == $uri && $route['method'] == $method) {
-                
+
                 return $this->dispatch($route);
+            }
+        }
+
+        // 2ª passada: rotas dinâmicas, com segmentos tipo /calculadoras/{slug}
+        foreach ($this->routes as $route) {
+
+            if ($route['method'] !== $method || strpos($route['route'], '{') === false) {
+                continue;
+            }
+
+            $params = $this->match($route['route'], $uri);
+            if ($params !== null) {
+                return $this->dispatch($route, $params);
             }
         }
 
@@ -57,7 +71,29 @@ class Router
         exit('Rota não encontrada');
     }
 
-    public function dispatch($route){
+    /**
+     * Tenta casar a URI recebida com um padrão de rota que contenha
+     * segmentos dinâmicos, ex: '/calculadoras/{slug}'.
+     * Retorna um array associativo ['slug' => 'tesouro'] em caso de match,
+     * ou null se a rota não corresponder.
+     */
+    private function match(string $pattern, string $uri): ?array
+    {
+        $paramNames = [];
+        $regex = preg_replace_callback('#\{([a-zA-Z_][a-zA-Z0-9_]*)\}#', function ($m) use (&$paramNames) {
+            $paramNames[] = $m[1];
+            return '([^/]+)';
+        }, $pattern);
+
+        if (!preg_match('#^' . $regex . '$#', $uri, $matches)) {
+            return null;
+        }
+
+        array_shift($matches);
+        return array_combine($paramNames, $matches);
+    }
+
+    public function dispatch($route, array $params = []){
 
         list($controller, $method) = explode('@', $route['action']);
 
@@ -74,7 +110,7 @@ class Router
         }
         
         $controller = new $controllerClass;
-        $controller->$method();
+        call_user_func_array([$controller, $method], $params);
 
     }
 
