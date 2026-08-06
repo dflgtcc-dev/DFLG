@@ -8,11 +8,18 @@ if (!function_exists('dflg_money')) {
 if (!function_exists('dflg_data_br')) {
     function dflg_data_br(?string $data): string
     {
-        if (!$data) {
-            return '—';
-        }
+        if (!$data) return '—';
         $dt = \DateTime::createFromFormat('Y-m-d', $data);
         return $dt ? $dt->format('d/m/Y') : $data;
+    }
+}
+if (!function_exists('dflg_mes_ano_br')) {
+    function dflg_mes_ano_br(string $data): string
+    {
+        $meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        $dt = \DateTime::createFromFormat('Y-m-d', $data);
+        if (!$dt) return $data;
+        return $meses[(int) $dt->format('n') - 1] . '/' . $dt->format('Y');
     }
 }
 
@@ -20,6 +27,19 @@ $iconesPorTipo = [
     'economizar' => 'bi-piggy-bank',
     'comprar' => 'bi-bag-check',
     'investir' => 'bi-graph-up-arrow',
+];
+
+/** Query string atual com overrides, preservando os outros filtros. */
+function dflg_meta_qs(array $atuais, array $overrides = []): string
+{
+    return '?' . http_build_query(array_merge($atuais, $overrides));
+}
+
+$filtrosAtuais = [
+    'busca' => $busca,
+    'tipoFiltro' => $tipoFiltro,
+    'status' => $statusFiltro,
+    'pagina' => $pagina,
 ];
 ?>
 <!DOCTYPE html>
@@ -47,7 +67,7 @@ $iconesPorTipo = [
                     <span class="bar"></span>
                     <h1>Metas</h1>
                 </div>
-                <p class="dflg-page-subtitle mb-0">Defina objetivos financeiros e acompanhe seu progresso</p>
+                <p class="dflg-page-subtitle mb-0">Acompanhe seus objetivos financeiros</p>
             </div>
             <button type="button" class="dflg-btn-solid-green px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalNovaMeta">
                 <i class="bi bi-plus-lg"></i> Nova Meta
@@ -57,78 +77,108 @@ $iconesPorTipo = [
 
         <!-- ===================== Cards de resumo ===================== -->
         <div class="row g-3 mb-4">
-            <div class="col-6 col-lg-3">
+            <div class="col-6 col-lg">
                 <div class="dflg-card h-100 p-4">
                     <div class="d-flex align-items-center justify-content-between mb-2">
-                        <p class="dflg-eyebrow mb-0">Ativas</p>
+                        <p class="dflg-eyebrow mb-0">Metas Ativas</p>
                         <i class="bi bi-bullseye text-success"></i>
                     </div>
-                    <p class="dflg-metric mb-0" style="font-size:1.8rem;"><?= $ativas ?></p>
-                    <p class="text-dflg-muted small mb-0">em andamento</p>
+                    <p class="dflg-metric mb-0" style="font-size:1.7rem;"><?= $ativas ?></p>
+                    <p class="text-dflg-muted small mb-0">objetivos em andamento</p>
                 </div>
             </div>
-            <div class="col-6 col-lg-3">
+            <div class="col-6 col-lg">
+                <div class="dflg-card h-100 p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <p class="dflg-eyebrow mb-0">Valor Acumulado</p>
+                        <i class="bi bi-wallet2 text-success"></i>
+                    </div>
+                    <p class="dflg-metric is-green mb-0" style="font-size:1.35rem;"><?= dflg_money($valorAcumulado) ?></p>
+                    <p class="text-dflg-muted small mb-0">guardado no total</p>
+                </div>
+            </div>
+            <div class="col-6 col-lg">
+                <div class="dflg-card h-100 p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <p class="dflg-eyebrow mb-0">Valor Necessário</p>
+                        <i class="bi bi-hourglass-split" style="color:#3b82f6;"></i>
+                    </div>
+                    <p class="dflg-metric mb-0" style="font-size:1.35rem; color:#3b82f6;"><?= dflg_money($valorNecessario) ?></p>
+                    <p class="text-dflg-muted small mb-0">para todas as metas</p>
+                </div>
+            </div>
+            <div class="col-6 col-lg">
                 <div class="dflg-card h-100 p-4">
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <p class="dflg-eyebrow mb-0">Concluídas</p>
                         <i class="bi bi-check-circle" style="color:#eab308;"></i>
                     </div>
-                    <p class="dflg-metric mb-0" style="font-size:1.8rem;"><?= $concluidas ?></p>
-                    <p class="text-dflg-muted small mb-0">metas batidas</p>
+                    <p class="dflg-metric mb-0" style="font-size:1.7rem;"><?= $concluidas ?></p>
+                    <p class="text-dflg-muted small mb-0">metas concluídas</p>
                 </div>
             </div>
-            <div class="col-6 col-lg-3">
+            <div class="col-6 col-lg">
                 <div class="dflg-card h-100 p-4">
                     <div class="d-flex align-items-center justify-content-between mb-2">
-                        <p class="dflg-eyebrow mb-0">Total Guardado</p>
-                        <i class="bi bi-wallet2 text-success"></i>
+                        <p class="dflg-eyebrow mb-0">Taxa de Sucesso</p>
+                        <i class="bi bi-graph-up-arrow text-success"></i>
                     </div>
-                    <p class="dflg-metric is-green mb-0" style="font-size:1.5rem;"><?= dflg_money($totalGuardado) ?></p>
-                    <p class="text-dflg-muted small mb-0">em todas as metas</p>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="dflg-card h-100 p-4">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <p class="dflg-eyebrow mb-0">Progresso Médio</p>
-                        <i class="bi bi-graph-up-arrow" style="color:#3b82f6;"></i>
-                    </div>
-                    <p class="dflg-metric mb-0" style="font-size:1.8rem;"><?= $progressoMedio ?>%</p>
-                    <p class="text-dflg-muted small mb-0">das metas ativas</p>
+                    <p class="dflg-metric is-green mb-0" style="font-size:1.7rem;"><?= $taxaSucesso ?>%</p>
+                    <p class="text-dflg-muted small mb-0">de metas concluídas</p>
                 </div>
             </div>
         </div>
 
-        <!-- ===================== Metas ativas ===================== -->
-        <?php if (empty($metasAtivas)): ?>
+        <!-- ===================== Busca + filtros ===================== -->
+        <form method="get" action="<?= URL_BASE ?>/metas" class="d-flex flex-wrap gap-3 mb-4 align-items-center">
+            <input type="hidden" name="pagina" value="1">
+            <div class="dflg-input-group flex-grow-1" style="min-width: 220px;">
+                <i class="bi bi-search dflg-input-icon"></i>
+                <input type="text" name="busca" value="<?= htmlspecialchars($busca) ?>" class="dflg-input" placeholder="Buscar meta...">
+            </div>
+
+            <select name="tipoFiltro" class="dflg-input dflg-select-auto w-auto" onchange="this.form.submit()">
+                <option value="all" <?= $tipoFiltro === 'all' ? 'selected' : '' ?>>Todos os tipos</option>
+                <?php foreach ($tipos as $valorTipo => $label): ?>
+                    <option value="<?= $valorTipo ?>" <?= $tipoFiltro === $valorTipo ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
+                <?php endforeach; ?>
+            </select>
+
+            <select name="status" class="dflg-input dflg-select-auto w-auto" onchange="this.form.submit()">
+                <option value="all" <?= $statusFiltro === 'all' ? 'selected' : '' ?>>Status: Todas</option>
+                <option value="ativas" <?= $statusFiltro === 'ativas' ? 'selected' : '' ?>>Status: Ativas</option>
+                <option value="concluidas" <?= $statusFiltro === 'concluidas' ? 'selected' : '' ?>>Status: Concluídas</option>
+            </select>
+        </form>
+
+        <!-- ===================== Grid de metas ===================== -->
+        <?php if (empty($metas)): ?>
             <div class="dflg-panel text-center py-5 text-dflg-muted mb-4">
                 <i class="bi bi-bullseye d-block mb-3" style="font-size: 2.5rem; opacity: .3;"></i>
-                <p class="mb-0">Nenhuma meta ativa ainda. Clique em "Nova Meta" no topo da página para criar a primeira.</p>
+                <p class="mb-0"><?= $totalFiltradas === 0 && $busca === '' && $tipoFiltro === 'all' && $statusFiltro === 'all' ? 'Nenhuma meta ainda. Clique em "Nova Meta" para criar a primeira.' : 'Nenhuma meta encontrada com esse filtro.' ?></p>
             </div>
         <?php else: ?>
             <div class="row g-3 mb-4">
-                <?php foreach ($metasAtivas as $m): ?>
-                    <div class="col-12 col-xl-6">
-                        <div class="dflg-card p-4 h-100">
+                <?php foreach ($metas as $m):
+                    $raio = 30;
+                    $circunferencia = 2 * M_PI * $raio;
+                    $offset = $circunferencia * (1 - $m['percentual'] / 100);
+                    ?>
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="dflg-goal-card">
                             <div class="d-flex align-items-start justify-content-between mb-3">
-                                <div class="d-flex align-items-start gap-3">
-                                    <span class="dflg-card-icon <?= $m['atrasada'] ? 'is-orange' : '' ?>">
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="dflg-card-icon">
                                         <i class="bi <?= $iconesPorTipo[$m['tipo']] ?? 'bi-bullseye' ?>"></i>
                                     </span>
                                     <div>
-                                        <h3 class="dflg-parcela-title">
+                                        <h3 class="dflg-parcela-title mb-0">
                                             <?= htmlspecialchars($m['nome_meta']) ?>
                                             <?php if ($m['fixada']): ?>
-                                                <i class="bi bi-pin-angle-fill text-success ms-1" title="Fixada no Dashboard" style="font-size: 0.85rem;"></i>
+                                                <i class="bi bi-pin-angle-fill text-success ms-1" title="Fixada no Dashboard" style="font-size: 0.75rem;"></i>
                                             <?php endif; ?>
                                         </h3>
-                                        <div class="d-flex flex-wrap align-items-center gap-2">
-                                            <span class="dflg-badge-soft"><?= htmlspecialchars($tipos[$m['tipo']] ?? $m['tipo']) ?></span>
-                                            <span class="text-dflg-muted small d-inline-flex align-items-center gap-1">
-                                                <i class="bi bi-calendar3"></i>
-                                                <?= $m['atrasada'] ? 'Prazo vencido' : 'até ' . dflg_data_br($m['data_limite']) ?>
-                                            </span>
-                                        </div>
+                                        <span class="text-dflg-muted small"><?= htmlspecialchars($tipos[$m['tipo']] ?? $m['tipo']) ?></span>
                                     </div>
                                 </div>
                                 <div class="dropdown">
@@ -156,47 +206,65 @@ $iconesPorTipo = [
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <div class="d-flex align-items-center justify-content-between mb-2 small">
-                                    <span class="text-dflg-muted"><span class="text-white fw-medium"><?= dflg_money((float) $m['valor_atual']) ?></span> de <?= dflg_money((float) $m['valor_meta']) ?></span>
-                                    <span class="fw-bold" style="color: <?= $m['percentual'] >= 80 ? 'var(--dflg-green-500)' : '#3b82f6' ?>;"><?= $m['percentual'] ?>%</span>
-                                </div>
-                                <div class="dflg-progress">
-                                    <div class="dflg-progress-bar <?= $m['percentual'] >= 80 ? '' : 'is-blue' ?>" style="width: <?= $m['percentual'] ?>%"></div>
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <svg width="70" height="70" viewBox="0 0 70 70" class="flex-shrink-0">
+                                    <circle cx="35" cy="35" r="<?= $raio ?>" class="dflg-ring-track"></circle>
+                                    <circle cx="35" cy="35" r="<?= $raio ?>" class="dflg-ring-progress"
+                                        style="stroke-dasharray: <?= round($circunferencia, 2) ?>; stroke-dashoffset: <?= round($offset, 2) ?>;"></circle>
+                                    <text x="35" y="35" class="dflg-ring-text" text-anchor="middle" dominant-baseline="central"><?= $m['percentual'] ?>%</text>
+                                </svg>
+                                <div class="flex-grow-1">
+                                    <p class="mb-1 small"><span class="text-dflg-muted">Meta:</span> <span class="text-white fw-medium"><?= dflg_money((float) $m['valor_meta']) ?></span></p>
+                                    <p class="mb-0 small"><span class="text-dflg-muted">Guardado:</span> <span class="text-success fw-medium"><?= dflg_money((float) $m['valor_atual']) ?></span></p>
                                 </div>
                             </div>
 
-                            <div class="d-flex align-items-center justify-content-between pt-3 dflg-pagination-border">
-                                <span class="text-dflg-muted small">Faltam <span class="text-white fw-medium"><?= dflg_money($m['faltam']) ?></span></span>
-                                <button type="button" class="dflg-btn-outline-green dflg-btn-sm"
-                                    onclick="dflgAbrirAportarMeta(<?= $m['id'] ?>, '<?= htmlspecialchars(addslashes($m['nome_meta'])) ?>')">
-                                    <i class="bi bi-plus-lg me-1"></i>Aportar
-                                </button>
+                            <div class="dflg-progress mb-3">
+                                <div class="dflg-progress-bar" style="width: <?= $m['percentual'] ?>%"></div>
                             </div>
+
+                            <div class="d-flex align-items-center justify-content-between">
+                                <?php if ($m['concluida']): ?>
+                                    <span class="dflg-status-badge is-done"><i class="bi bi-check-circle-fill"></i> Concluída</span>
+                                    <span class="text-dflg-muted small d-inline-flex align-items-center gap-1">
+                                        <i class="bi bi-calendar3"></i> Concluída em <?= dflg_data_br($m['data_limite']) ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="text-dflg-muted small">Faltam <span class="text-white fw-medium"><?= dflg_money($m['faltam']) ?></span></span>
+                                    <span class="text-dflg-muted small d-inline-flex align-items-center gap-1">
+                                        <i class="bi bi-calendar3"></i> Previsão: <?= dflg_mes_ano_br($m['data_limite']) ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+
+                            <?php if (!$m['concluida']): ?>
+                                <button type="button" class="dflg-btn-outline-green dflg-btn-sm w-100 mt-3"
+                                    onclick="dflgAbrirAportarMeta(<?= $m['id'] ?>, '<?= htmlspecialchars(addslashes($m['nome_meta'])) ?>')">
+                                    <i class="bi bi-plus-lg me-1"></i>Guardar valor
+                                </button>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
             </div>
-        <?php endif; ?>
 
-        <!-- ===================== Metas concluídas ===================== -->
-        <?php if (!empty($metasConcluidas)): ?>
-            <h2 class="mb-3" style="font-size: 1.1rem;"><i class="bi bi-check-circle me-2" style="color:#eab308;"></i>Metas concluídas</h2>
-            <div class="dflg-panel">
-                <div class="dflg-info-list">
-                    <?php foreach ($metasConcluidas as $m): ?>
-                        <div class="dflg-info-row">
-                            <span class="dflg-info-icon"><i class="bi <?= $iconesPorTipo[$m['tipo']] ?? 'bi-bullseye' ?>"></i></span>
-                            <div class="flex-grow-1">
-                                <p class="label mb-0"><?= htmlspecialchars($tipos[$m['tipo']] ?? $m['tipo']) ?></p>
-                                <p class="value"><?= htmlspecialchars($m['nome_meta']) ?></p>
-                            </div>
-                            <span class="text-success fw-semibold"><?= dflg_money((float) $m['valor_meta']) ?></span>
-                        </div>
-                    <?php endforeach; ?>
+            <!-- ===================== Paginação ===================== -->
+            <div class="d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3">
+                <span class="text-dflg-muted small">Mostrando <?= count($metas) ?> de <?= $totalFiltradas ?> metas</span>
+                <div class="d-flex align-items-center gap-1">
+                    <a class="dflg-page-btn <?= $pagina <= 1 ? 'disabled' : '' ?>" href="<?= dflg_meta_qs($filtrosAtuais, ['pagina' => max(1, $pagina - 1)]) ?>">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                    <?php for ($p = 1; $p <= $totalPaginas; $p++): ?>
+                        <a class="dflg-page-btn <?= $p === $pagina ? 'active' : '' ?>" href="<?= dflg_meta_qs($filtrosAtuais, ['pagina' => $p]) ?>"><?= $p ?></a>
+                    <?php endfor; ?>
+                    <a class="dflg-page-btn <?= $pagina >= $totalPaginas ? 'disabled' : '' ?>" href="<?= dflg_meta_qs($filtrosAtuais, ['pagina' => min($totalPaginas, $pagina + 1)]) ?>">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
                 </div>
             </div>
         <?php endif; ?>
+
     </main>
 
     <!-- ===================== Modal Nova Meta ===================== -->
@@ -327,10 +395,8 @@ $iconesPorTipo = [
         </div>
     </div>
 
-    <!-- Form escondido usado só para o Excluir (com confirm()) -->
+    <!-- Forms escondidos usados só para Excluir e Fixar/Desafixar -->
     <form method="post" id="formExcluirMeta" action="<?= URL_BASE ?>/metas"></form>
-
-    <!-- Form escondido usado só para Fixar/Desafixar -->
     <form method="post" id="formFixarMeta" action="<?= URL_BASE ?>/metas"></form>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

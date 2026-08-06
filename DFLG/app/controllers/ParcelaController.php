@@ -22,8 +22,41 @@ class ParcelaController extends Controller
     {
         $usuarioId = isset($_SESSION['usuario_logado']) ? $_SESSION['usuario_logado']->getId() : null;
 
+        // Os cards do topo refletem só os compromissos ATIVOS (em andamento)
         $parcelasAtivas = $this->service->listarComProgresso($usuarioId, true);
         $resumo = $this->service->resumo($parcelasAtivas);
+
+        // A tabela abaixo lista tudo (ativos + concluídos), filtrável
+        $busca = trim($_GET['busca'] ?? '');
+        $categoriaFiltro = $_GET['categoriaFiltro'] ?? 'all';
+        $statusFiltro = $_GET['status'] ?? 'all';
+        $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
+        $tamanhoPagina = 8;
+
+        $todasParcelas = $this->service->listarComProgresso($usuarioId, false);
+
+        $filtradas = array_values(array_filter($todasParcelas, function ($p) use ($busca, $categoriaFiltro, $statusFiltro) {
+            if ($busca !== '' && stripos($p['descricao'], $busca) === false) {
+                return false;
+            }
+            if ($categoriaFiltro !== 'all' && $p['categoria'] !== $categoriaFiltro) {
+                return false;
+            }
+            if ($statusFiltro === 'andamento' && $p['quitado']) {
+                return false;
+            }
+            if ($statusFiltro === 'concluido' && !$p['quitado']) {
+                return false;
+            }
+            return true;
+        }));
+
+        usort($filtradas, fn($a, $b) => $a['quitado'] <=> $b['quitado']);
+
+        $totalFiltradas = count($filtradas);
+        $totalPaginas = max(1, (int) ceil($totalFiltradas / $tamanhoPagina));
+        $pagina = min($pagina, $totalPaginas);
+        $parcelasPagina = array_slice($filtradas, ($pagina - 1) * $tamanhoPagina, $tamanhoPagina);
 
         $erros = $_SESSION['flash_erros_parcela'] ?? [];
         $formAntigo = $_SESSION['flash_form_parcela'] ?? [];
@@ -32,8 +65,14 @@ class ParcelaController extends Controller
 
         $this->view('parcelas/index', [
             'activePage' => 'installments',
-            'parcelas' => $parcelasAtivas,
+            'parcelas' => $parcelasPagina,
             'categorias' => TransacaoService::CATEGORIAS,
+            'busca' => $busca,
+            'categoriaFiltro' => $categoriaFiltro,
+            'statusFiltro' => $statusFiltro,
+            'pagina' => $pagina,
+            'totalPaginas' => $totalPaginas,
+            'totalFiltradas' => $totalFiltradas,
             'ativos' => $resumo['ativos'],
             'totalMensal' => $resumo['totalMensal'],
             'totalPendente' => $resumo['totalPendente'],
@@ -95,5 +134,77 @@ class ParcelaController extends Controller
         }
 
         $this->redirect(URL_BASE . '/parcelamentos');
+    }
+
+    /** Edita um parcelamento existente (POST /parcelamentos/{id}/atualizar). */
+    public function atualizar($id)
+    {
+        $parcela = $this->pegarParcelaDoUsuario((int) $id);
+        if (!$parcela) {
+            $this->redirect(URL_BASE . '/parcelamentos');
+        }
+
+        $descricao = trim($_POST['descricao'] ?? '');
+        $categoria = $_POST['categoria'] ?? '';
+        $valorTotal = str_replace(',', '.', $_POST['valorTotal'] ?? '');
+        $numeroParcelas = (int) ($_POST['numeroParcelas'] ?? 0);
+        $dataPrimeiraParcela = $_POST['dataPrimeiraParcela'] ?? '';
+
+        $validador = new Validador();
+        $validador->obrigatorio('descricao', $descricao)
+                  ->obrigatorio('categoria', $categoria)
+                  ->obrigatorio('valorTotal', $valorTotal)
+                  ->obrigatorio('dataPrimeiraParcela', $dataPrimeiraParcela);
+
+        if (!$validador->temErros() && (!is_numeric($valorTotal) || (float) $valorTotal <= 0)) {
+            $validador->adicionarErro('valorTotal', 'Informe um valor total maior que zero');
+        }
+        if (!$validador->temErros() && $numeroParcelas < 1) {
+            $validador->adicionarErro('numeroParcelas', 'Informe em quantas parcelas foi dividido (mínimo 1)');
+        }
+
+        if ($validador->temErros()) {
+            $_SESSION['flash_erros_parcela'] = $validador->getErros();
+            $this->redirect(URL_BASE . '/parcelamentos');
+        }
+
+        $parcela->setDescricao($descricao);
+        $parcela->setCategoria($categoria);
+        $parcela->setValorTotal((float) $valorTotal);
+        $parcela->setNumeroParcelas($numeroParcelas);
+        $parcela->setValorParcela(round(((float) $valorTotal) / $numeroParcelas, 2));
+        $parcela->setDataPrimeiraParcela($dataPrimeiraParcela);
+
+        $this->service->atualizar($parcela);
+
+        $this->redirect(URL_BASE . '/parcelamentos');
+    }
+
+    /** Exclui um parcelamento (POST /parcelamentos/{id}/excluir). */
+    public function excluir($id)
+    {
+        $parcela = $this->pegarParcelaDoUsuario((int) $id);
+        if ($parcela) {
+            $this->service->remover((int) $id);
+        }
+
+        $this->redirect(URL_BASE . '/parcelamentos');
+    }
+
+    /** Busca o parcelamento garantindo que ele pertence ao usuário logado (ou é público/demo). */
+    private function pegarParcelaDoUsuario(int $id): ?Parcela
+    {
+        $parcela = $this->service->getById($id);
+        if (!$parcela) {
+            return null;
+        }
+
+        $usuarioId = isset($_SESSION['usuario_logado']) ? $_SESSION['usuario_logado']->getId() : null;
+
+        if ($parcela->getUsuarioId() !== null && $parcela->getUsuarioId() !== $usuarioId) {
+            return null;
+        }
+
+        return $parcela;
     }
 }

@@ -19,6 +19,16 @@ class ParcelaService
         return $this->repository->create($parcela);
     }
 
+    public function getById(int $id): ?Parcela
+    {
+        return $this->repository->getById($id);
+    }
+
+    public function atualizar(Parcela $parcela): bool
+    {
+        return $this->repository->update($parcela);
+    }
+
     public function remover(int $id): bool
     {
         return $this->repository->delete($id);

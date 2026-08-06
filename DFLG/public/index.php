@@ -35,6 +35,8 @@ $router->post('/categorias', 'CategoriaController@atualizar');
 // Parcelamentos
 $router->get('/parcelamentos', 'ParcelaController@index');
 $router->post('/parcelamentos', 'ParcelaController@criar');
+$router->post('/parcelamentos/{id}/atualizar', 'ParcelaController@atualizar');
+$router->post('/parcelamentos/{id}/excluir', 'ParcelaController@excluir');
 
 // Metas financeiras (RF08 / RF19)
 $router->get('/metas', 'MetaController@index');

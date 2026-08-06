@@ -52,6 +52,35 @@ class ParcelaRepository
         return $stmt->execute();
     }
 
+    public function getById(int $id): ?Parcela
+    {
+        $stmt = $this->connection->prepare("SELECT * FROM parcelas WHERE id = :id");
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        $linha = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $linha ? Parcela::arrayParaObjeto($linha) : null;
+    }
+
+    /** Atualiza os dados cadastrais do parcelamento (descrição, categoria, valor total, nº de parcelas, data). */
+    public function update(Parcela $parcela): bool
+    {
+        $sql = "UPDATE parcelas SET descricao = :descricao, categoria = :categoria, valor_total = :valor_total,
+                    numero_parcelas = :numero_parcelas, valor_parcela = :valor_parcela, data_primeira_parcela = :data_primeira_parcela
+                WHERE id = :id";
+
+        $stmt = $this->connection->prepare($sql);
+        $stmt->bindValue(':descricao', $parcela->getDescricao());
+        $stmt->bindValue(':categoria', $parcela->getCategoria());
+        $stmt->bindValue(':valor_total', $parcela->getValorTotal());
+        $stmt->bindValue(':numero_parcelas', $parcela->getNumeroParcelas(), PDO::PARAM_INT);
+        $stmt->bindValue(':valor_parcela', $parcela->getValorParcela());
+        $stmt->bindValue(':data_primeira_parcela', $parcela->getDataPrimeiraParcela());
+        $stmt->bindValue(':id', $parcela->getId(), PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
     public function delete(int $id): bool
     {
         $stmt = $this->connection->prepare("DELETE FROM parcelas WHERE id = :id");

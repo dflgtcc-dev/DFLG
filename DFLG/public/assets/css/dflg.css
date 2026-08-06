@@ -1545,6 +1545,96 @@ a { text-decoration: none; }
     pointer-events: none;
 }
 
+/* ===================== Tabela (Parcelamentos) ===================== */
+.dflg-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.dflg-table thead th {
+    text-align: left;
+    color: var(--dflg-gray-500);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--dflg-border);
+    white-space: nowrap;
+}
+
+.dflg-table tbody td {
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid var(--dflg-border-soft);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.dflg-table tbody tr:last-child td { border-bottom: none; }
+.dflg-table tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+/* ===================== Badge de status (Parcelamentos / Metas) ===================== */
+.dflg-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.dflg-status-badge.is-progress {
+    background: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
+}
+
+.dflg-status-badge.is-done {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--dflg-green-500);
+}
+
+/* ===================== Anel de progresso (Metas) — cor única, sem variar por meta ===================== */
+.dflg-ring-track {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 6;
+}
+
+.dflg-ring-progress {
+    fill: none;
+    stroke: var(--dflg-green-500);
+    stroke-width: 6;
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
+
+.dflg-ring-text {
+    fill: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+}
+
+/* ===================== Card de meta ===================== */
+.dflg-goal-card {
+    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.05), transparent);
+    border: 1px solid var(--dflg-border);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    height: 100%;
+    transition: border-color .2s ease;
+}
+
+.dflg-goal-card:hover { border-color: rgba(34, 197, 94, 0.25); }
+
+@media (max-width: 767px) {
+    .dflg-table { font-size: 0.8rem; }
+    .dflg-table thead th, .dflg-table tbody td { padding: 0.75rem 0.85rem; }
+}
+
 .dflg-modal {
     background: #0f0f0f;
     border: 1px solid var(--dflg-border);
@@ -1897,28 +1987,6 @@ a { text-decoration: none; }
     color: var(--dflg-green-500);
     font-size: 2rem;
     margin-bottom: 1rem;
-}
-
-.dflg-transacoes-scroll {
-    max-height: 450px;
-    overflow-y: auto;
-}
-
-.dflg-transacoes-scroll::-webkit-scrollbar {
-    width: 6px;
-}
-
-.dflg-transacoes-scroll::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.dflg-transacoes-scroll::-webkit-scrollbar-thumb {
-    background: rgba(16, 185, 129, 0.4);
-    border-radius: 999px;
-}
-
-.dflg-transacoes-scroll::-webkit-scrollbar-thumb:hover {
-    background: rgba(16, 185, 129, 0.7);
 }
 
 /* ==========================================================================

@@ -260,19 +260,20 @@ function dflg_data_label(string $data, string $hoje, string $ontem): string
                     <div class="dflg-transacoes-scroll">
                         <?php foreach ($gruposTransacoes as $data => $itens): ?>
                             <p class="dflg-tx-group-label"><?= dflg_data_label($data, $hojeISO, $ontemISO) ?></p>
-                        <?php foreach ($itens as $t): ?>
-                            <div class="dflg-tx-item">
-                                <span class="dflg-tx-icon <?= $t['tipo'] === 'despesa' ? 'is-expense' : '' ?>">
-                                    <i class="bi <?= $t['tipo'] === 'receita' ? 'bi-graph-up-arrow' : 'bi-graph-down-arrow' ?>"></i>
-                                </span>
-                                <span class="dflg-tx-desc text-truncate"><?= htmlspecialchars($t['descricao']) ?></span>
-                                <span class="dflg-tx-category d-none d-sm-inline-block"><?= htmlspecialchars($t['categoria']) ?></span>
-                                <span class="dflg-tx-value <?= $t['tipo'] === 'receita' ? 'is-income' : 'is-expense' ?>">
-                                    <?= $t['tipo'] === 'receita' ? '+' : '−' ?><?= dflg_money($t['valor']) ?>
-                                </span>
-                            </div>
+                            <?php foreach ($itens as $t): ?>
+                                <div class="dflg-tx-item">
+                                    <span class="dflg-tx-icon <?= $t['tipo'] === 'despesa' ? 'is-expense' : '' ?>">
+                                        <i class="bi <?= $t['tipo'] === 'receita' ? 'bi-graph-up-arrow' : 'bi-graph-down-arrow' ?>"></i>
+                                    </span>
+                                    <span class="dflg-tx-desc text-truncate"><?= htmlspecialchars($t['descricao']) ?></span>
+                                    <span class="dflg-tx-category d-none d-sm-inline-block"><?= htmlspecialchars($t['categoria']) ?></span>
+                                    <span class="dflg-tx-value <?= $t['tipo'] === 'receita' ? 'is-income' : 'is-expense' ?>">
+                                        <?= $t['tipo'] === 'receita' ? '+' : '−' ?><?= dflg_money($t['valor']) ?>
+                                    </span>
+                                </div>
+                            <?php endforeach; ?>
                         <?php endforeach; ?>
-                    <?php endforeach; ?>
+                    </div>
                 </div>
             </div>
         </div>
@@ -303,6 +304,7 @@ function dflg_data_label(string $data, string $hoje, string $ontem): string
                             <a href="<?= URL_BASE ?>/metas" class="dflg-btn-outline-green dflg-btn-sm">Criar minha primeira meta</a>
                         </div>
                     <?php else: ?>
+                        
                         <?php foreach ($metas as $meta): ?>
                             <div class="dflg-goal">
                                 <div class="dflg-goal-top">
@@ -329,7 +331,7 @@ function dflg_data_label(string $data, string $hoje, string $ontem): string
 
             <div class="col-12 col-lg-6">
                 <div class="dflg-panel">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex justify-content-between align-items-start mb-4">
                         <div>
                             <h2>Próximos Parcelamentos</h2>
                             <p class="dflg-panel-sub mb-0">Vencimentos do mês</p>
@@ -368,54 +370,6 @@ function dflg_data_label(string $data, string $hoje, string $ontem): string
 
     </main>
 
-    <!-- ===================== Modal Mover para Meta ===================== -->
-    <?php if (!empty($todasMetasAtivas)): ?>
-        <div class="modal fade" id="modalMoverParaMeta" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content dflg-modal">
-                    <form method="post" id="formMoverParaMeta" onsubmit="return dflgPrepararMoverMeta(event)">
-                        <input type="hidden" name="origem" value="dashboard">
-                        <div class="modal-header border-0 pb-0">
-                            <div>
-                                <h2 class="modal-title">Mover saldo para uma meta</h2>
-                                <p class="text-dflg-muted small mb-0 mt-1">Seu saldo positivo deste mês: <span class="text-success fw-semibold"><?= dflg_money($saldo) ?></span></p>
-                            </div>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label class="dflg-auth-label">Meta de destino</label>
-                                <select name="metaId" id="moverMetaSelect" class="dflg-input" style="padding-left:1rem;" required>
-                                    <?php foreach ($todasMetasAtivas as $opcao): ?>
-                                        <option value="<?= $opcao['id'] ?>"><?= htmlspecialchars($opcao['nome_meta']) ?> (<?= $opcao['percentual'] ?>%)</option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="mb-1">
-                                <label class="dflg-auth-label">Valor a mover</label>
-                                <div class="dflg-input-group">
-                                    <i class="bi bi-cash-coin dflg-input-icon"></i>
-                                    <input type="number" step="0.01" min="0.01" name="valorAporte" class="dflg-input" value="<?= number_format($saldo, 2, '.', '') ?>" required>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer border-0 pt-0">
-                            <button type="button" class="dflg-btn-cancel flex-fill" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="dflg-auth-submit flex-fill">Confirmar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <script>
-            function dflgPrepararMoverMeta(event) {
-                var id = document.getElementById('moverMetaSelect').value;
-                if (!id) return false;
-                document.getElementById('formMoverParaMeta').action = '<?= URL_BASE ?>/metas/' + id + '/aportar';
-                return true;
-            }
-        </script>
-    <?php endif; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
@@ -508,6 +462,8 @@ function dflg_data_label(string $data, string $hoje, string $ontem): string
             }
         });
     </script>
+
+ 
 </body>
 
 </html>

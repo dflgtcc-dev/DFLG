@@ -24,10 +24,38 @@ class MetaController extends Controller
     {
         $usuarioId = isset($_SESSION['usuario_logado']) ? $_SESSION['usuario_logado']->getId() : null;
 
-        $metas = $this->service->listar($usuarioId);
-        $metasAtivas = array_values(array_filter($metas, fn($m) => !$m['concluida']));
-        $metasConcluidas = array_values(array_filter($metas, fn($m) => $m['concluida']));
-        $resumo = $this->service->resumo($metas);
+        $busca = trim($_GET['busca'] ?? '');
+        $tipoFiltro = $_GET['tipoFiltro'] ?? 'all';
+        $statusFiltro = $_GET['status'] ?? 'all';
+        $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
+        $tamanhoPagina = 6;
+
+        $todasMetas = $this->service->listar($usuarioId);
+        $resumo = $this->service->resumo($todasMetas);
+
+        $filtradas = array_values(array_filter($todasMetas, function ($m) use ($busca, $tipoFiltro, $statusFiltro) {
+            if ($busca !== '' && stripos($m['nome_meta'], $busca) === false) {
+                return false;
+            }
+            if ($tipoFiltro !== 'all' && $m['tipo'] !== $tipoFiltro) {
+                return false;
+            }
+            if ($statusFiltro === 'ativas' && $m['concluida']) {
+                return false;
+            }
+            if ($statusFiltro === 'concluidas' && !$m['concluida']) {
+                return false;
+            }
+            return true;
+        }));
+
+        // Ativas primeiro, depois concluídas — dentro de cada grupo, mais recentes primeiro
+        usort($filtradas, fn($a, $b) => $a['concluida'] <=> $b['concluida']);
+
+        $totalFiltradas = count($filtradas);
+        $totalPaginas = max(1, (int) ceil($totalFiltradas / $tamanhoPagina));
+        $pagina = min($pagina, $totalPaginas);
+        $metasPagina = array_slice($filtradas, ($pagina - 1) * $tamanhoPagina, $tamanhoPagina);
 
         $erros = $_SESSION['flash_erros_meta'] ?? [];
         $formAntigo = $_SESSION['flash_form_meta'] ?? [];
@@ -36,13 +64,19 @@ class MetaController extends Controller
 
         $this->view('metas/index', [
             'activePage' => 'goals',
-            'metasAtivas' => $metasAtivas,
-            'metasConcluidas' => $metasConcluidas,
+            'metas' => $metasPagina,
             'tipos' => Meta::TIPOS,
+            'busca' => $busca,
+            'tipoFiltro' => $tipoFiltro,
+            'statusFiltro' => $statusFiltro,
+            'pagina' => $pagina,
+            'totalPaginas' => $totalPaginas,
+            'totalFiltradas' => $totalFiltradas,
             'ativas' => $resumo['ativas'],
             'concluidas' => $resumo['concluidas'],
-            'totalGuardado' => $resumo['totalGuardado'],
-            'progressoMedio' => $resumo['progressoMedio'],
+            'valorAcumulado' => $resumo['valorAcumulado'],
+            'valorNecessario' => $resumo['valorNecessario'],
+            'taxaSucesso' => $resumo['taxaSucesso'],
             'erros' => $erros,
             'formAntigo' => $formAntigo,
             'abrirModal' => $abrirModal,

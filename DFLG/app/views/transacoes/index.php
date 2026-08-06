@@ -135,7 +135,9 @@ $exibindoAte = min($pagina * $tamanhoPagina, $totalTransacoes);
 
             <div class="flex-grow-1"></div>
 
-            
+            <button type="button" class="dflg-btn-solid-green px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalNovaTransacao">
+                <i class="bi bi-plus-lg"></i> Nova Transação
+            </button>
         </form>
 
         <!-- ===================== Cards de resumo ===================== -->
@@ -182,27 +184,19 @@ $exibindoAte = min($pagina * $tamanhoPagina, $totalTransacoes);
         <!-- ===================== Lista de transações ===================== -->
         <div class="dflg-panel">
 
-            <form method="get"
-                action="<?= URL_BASE ?>/transacoes"
-                class="mb-4 d-flex align-items-center justify-content-between">
-
-                <div class="dflg-input-group" style="max-width: 300px; width: 100%;">
+            <form method="get" action="<?= URL_BASE ?>/transacoes" class="mb-4">
+                <input type="hidden" name="tipo" value="<?= htmlspecialchars($tipo) ?>">
+                <input type="hidden" name="categoria" value="<?= htmlspecialchars($categoria) ?>">
+                <input type="hidden" name="ordenar" value="<?= htmlspecialchars($ordenar) ?>">
+                <input type="hidden" name="dataInicio" value="<?= htmlspecialchars($dataInicio) ?>">
+                <input type="hidden" name="dataFim" value="<?= htmlspecialchars($dataFim) ?>">
+                <input type="hidden" name="tamanho" value="<?= $tamanhoPagina ?>">
+                <div class="dflg-input-group">
                     <i class="bi bi-search dflg-input-icon"></i>
-                    <input type="text"
-                        name="busca"
-                        value="<?= htmlspecialchars($busca) ?>"
-                        class="dflg-input"
-                        placeholder="Buscar transações...">
+                    <input type="text" name="busca" value="<?= htmlspecialchars($busca) ?>" class="dflg-input" placeholder="Buscar transação por descrição ou categoria...">
                 </div>
-
-                <button type="button"
-                        class="dflg-btn-solid-green px-4 py-2 ms-3"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalNovaTransacao">
-                    <i class="bi bi-plus-lg"></i> Nova Transação
-                </button>
-
             </form>
+
             <?php if (empty($transacoes)): ?>
                 <div class="text-center py-5 text-dflg-muted">
                     <i class="bi bi-search d-block mb-3" style="font-size: 2.5rem; opacity: .3;"></i>

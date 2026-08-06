@@ -125,29 +125,32 @@ class MetaService
         return ['sucesso' => true, 'concluidaAgora' => $concluida, 'meta' => $meta];
     }
 
-    /** Resumo (cards do topo) a partir de uma lista já processada por listar(). */
-    public function resumo(array $metas): array
+    /** Resumo (cards do topo) a partir da lista COMPLETA (ativas + concluídas) já processada por listar(). */
+    public function resumo(array $todasMetas): array
     {
         $ativas = 0;
         $concluidas = 0;
-        $totalGuardado = 0.0;
-        $somaPercentual = 0;
+        $valorAcumulado = 0.0;
+        $valorNecessario = 0.0;
 
-        foreach ($metas as $m) {
-            $totalGuardado += (float) $m['valor_atual'];
+        foreach ($todasMetas as $m) {
+            $valorAcumulado += (float) $m['valor_atual'];
             if ($m['concluida']) {
                 $concluidas++;
             } else {
                 $ativas++;
-                $somaPercentual += $m['percentual'];
+                $valorNecessario += $m['faltam'];
             }
         }
+
+        $totalMetas = $ativas + $concluidas;
 
         return [
             'ativas' => $ativas,
             'concluidas' => $concluidas,
-            'totalGuardado' => $totalGuardado,
-            'progressoMedio' => $ativas > 0 ? (int) round($somaPercentual / $ativas) : 0,
+            'valorAcumulado' => $valorAcumulado,
+            'valorNecessario' => $valorNecessario,
+            'taxaSucesso' => $totalMetas > 0 ? (int) round(($concluidas / $totalMetas) * 100) : 0,
         ];
     }
 }
